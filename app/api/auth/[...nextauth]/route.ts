@@ -2,7 +2,6 @@ import NextAuth, { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
-import { headers } from "next/headers";
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -16,7 +15,6 @@ export const authOptions: AuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    // JWT oluşturulurken kullanıcı bilgilerini token'a ekler
     async jwt({ token, user, account, profile }) {
       if (user) {
         token.role = user.roleId;
@@ -27,7 +25,6 @@ export const authOptions: AuthOptions = {
       }
       return token;
     },
-    // Session oluşturulurken token'daki bilgileri session'a ekler
     async session({ session, token }) {
       if (session.user) {
         session.user.role = token.role;
@@ -36,51 +33,64 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
-    // Kullanıcı oturum açtığında kullanıcı kaydını günceller veya oluşturur
     async signIn({ user, account, profile }) {
-      if (user && profile && account) {
-        // Kullanıcıya ait mevcut hesabı kontrol et
-        const existingAccount = await prisma.account.findUnique({
-          where: {
-            provider_providerAccountId: {
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-            },
-          },
+      if (!user || !profile || !account) return false;
+
+      try {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          include: { accounts: true },
         });
-    
-        // Eğer mevcut bir hesap yoksa, kullanıcı kaydını oluştur veya güncelle
-        if (!existingAccount) {
-          await prisma.user.upsert({
-            where: { email: user.email },
-            update: {
+
+        if (existingUser) {
+          // Kullanıcı zaten kayıtlı, gerekli güncellemeleri yap
+          await prisma.user.update({
+            where: { id: existingUser.id },
+            data: {
               lastLogin: new Date(),
-              username: profile.email?.split('@')[0],
+              name: profile.name ?? existingUser.name,
+              image: user.image ?? existingUser.image,
+              username: profile.email?.split('@')[0] ?? existingUser.username,
             },
-            create: {
-              id: user.id,
-              name: profile.name,
+          });
+
+          // Hesap kaydı yoksa ekle
+          if (!existingUser.accounts.some(acc => acc.provider === account.provider)) {
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                type: account.type || "oauth",
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
+            });
+          }
+        } else {
+          // Yeni kullanıcı, tüm bilgileri ile kaydet
+          const newUser = await prisma.user.create({
+            data: {
               email: user.email,
+              name: profile.name,
               image: user.image,
               lastLogin: new Date(),
               username: profile.email?.split('@')[0],
-            },
-          });
-    
-          // Yeni bir hesap kaydı oluştur, type alanını eklemeyi unutmayın
-          await prisma.account.create({
-            data: {
-              userId: user.id,
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-              type: account.type || "oauth", // Genellikle "oauth" veya "oauth2"
+              accounts: {
+                create: {
+                  type: account.type || "oauth",
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                },
+              },
             },
           });
         }
+
+        return true;
+      } catch (error) {
+        console.error("Error during sign in:", error);
+        return false;
       }
-      return true;
-    }
-    
+    },
   },
 };
 

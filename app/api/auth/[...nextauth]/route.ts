@@ -2,6 +2,7 @@ import NextAuth, { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
+import { headers } from "next/headers";
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -37,6 +38,11 @@ export const authOptions: AuthOptions = {
       if (!user || !profile || !account) return false;
 
       try {
+        const headersList = headers();
+        const ipAddress = headersList.get('x-forwarded-for') || 
+                          headersList.get('x-real-ip') || 
+                          'Unknown';
+
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
           include: { accounts: true },
@@ -51,6 +57,7 @@ export const authOptions: AuthOptions = {
               name: profile.name ?? existingUser.name,
               image: user.image ?? existingUser.image,
               username: profile.email?.split('@')[0] ?? existingUser.username,
+              ipAddress: ipAddress,
             },
           });
 
@@ -74,6 +81,7 @@ export const authOptions: AuthOptions = {
               image: user.image,
               lastLogin: new Date(),
               username: profile.email?.split('@')[0],
+              ipAddress: ipAddress,
               accounts: {
                 create: {
                   type: account.type || "oauth",

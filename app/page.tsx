@@ -1,8 +1,13 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "./api/auth/[...nextauth]/route";
+"use client";
 
-export default async function Home() {
-  const session = await getServerSession(authOptions);
+import { useSession } from "next-auth/react";
+
+export default function Home() {
+  const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return <p>Loading...</p>; // Oturum durumu yüklenirken gösterilecek içerik
+  }
 
   return (
     <div className="container mx-auto px-6 py-8">

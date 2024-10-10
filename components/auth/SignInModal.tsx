@@ -2,7 +2,7 @@
 import { ReactNode } from 'react';
 import { signIn } from 'next-auth/react';
 import { FaGoogle } from "react-icons/fa";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription  } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 interface ModalProps {
@@ -21,6 +21,9 @@ export default function SignInModal({ isOpen, onClose }: ModalProps) {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-center">Sign In</DialogTitle>
+          <DialogDescription>
+            Please sign in using your Google account to access all features.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
           <Button onClick={handleGoogleSignIn} variant="destructive" className="w-full flex items-center justify-center">

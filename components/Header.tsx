@@ -4,10 +4,17 @@ import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import SignInModal from './auth/SignInModal';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 export default function Header() {
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const { data: session, status } = useSession();
+  const pathname = usePathname();
+
+  // If the current path starts with '/admin', don't render the header
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <header className="bg-white shadow-md">

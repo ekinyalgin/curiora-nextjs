@@ -10,11 +10,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-        <script src="https://cdn.tailwindcss.com"></script>
-      <body className="bg-gray-100 text-gray-800">
+      <body className="bg-background text-foreground font-sans">
         <Providers>
           <Header />
-          <main className="container mx-auto p-4">
+          <main className="container mx-auto p-6">
             {children}
           </main>
         </Providers>

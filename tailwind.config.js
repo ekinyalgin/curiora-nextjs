@@ -1,25 +1,65 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    darkMode: ["class"],
     content: [
       "./app/**/*.{js,ts,jsx,tsx}",
       "./pages/**/*.{js,ts,jsx,tsx}",
       "./components/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
-      extend: {
-        colors: {
-          background: '#f9fafb', // Açık gri tonunda arka plan rengi
-          foreground: '#111827', // Koyu gri tonunda yazı rengi
-          primary: '#3b82f6', // Mavi tonunda ana renk
-          secondary: '#ef4444', // Kırmızı tonunda vurgu rengi
-          accent: '#10b981', // Yeşil tonunda vurgu
-          muted: '#6b7280', // Nötr metinler için
-        },
-        fontFamily: {
-          sans: ['Inter', 'sans-serif'], // Modern bir sans-serif fontu
-        },
-      },
+    	extend: {
+    		colors: {
+    			background: 'hsl(var(--background))',
+    			foreground: 'hsl(var(--foreground))',
+    			primary: {
+    				DEFAULT: 'hsl(var(--primary))',
+    				foreground: 'hsl(var(--primary-foreground))'
+    			},
+    			secondary: {
+    				DEFAULT: 'hsl(var(--secondary))',
+    				foreground: 'hsl(var(--secondary-foreground))'
+    			},
+    			accent: {
+    				DEFAULT: 'hsl(var(--accent))',
+    				foreground: 'hsl(var(--accent-foreground))'
+    			},
+    			muted: {
+    				DEFAULT: 'hsl(var(--muted))',
+    				foreground: 'hsl(var(--muted-foreground))'
+    			},
+    			card: {
+    				DEFAULT: 'hsl(var(--card))',
+    				foreground: 'hsl(var(--card-foreground))'
+    			},
+    			popover: {
+    				DEFAULT: 'hsl(var(--popover))',
+    				foreground: 'hsl(var(--popover-foreground))'
+    			},
+    			destructive: {
+    				DEFAULT: 'hsl(var(--destructive))',
+    				foreground: 'hsl(var(--destructive-foreground))'
+    			},
+    			border: 'hsl(var(--border))',
+    			input: 'hsl(var(--input))',
+    			ring: 'hsl(var(--ring))',
+    			chart: {
+    				'1': 'hsl(var(--chart-1))',
+    				'2': 'hsl(var(--chart-2))',
+    				'3': 'hsl(var(--chart-3))',
+    				'4': 'hsl(var(--chart-4))',
+    				'5': 'hsl(var(--chart-5))'
+    			}
+    		},
+    		fontFamily: {
+    			sans: ['Inter', 'sans-serif']
+    		},
+    		borderRadius: {
+    			lg: 'var(--radius)',
+    			md: 'calc(var(--radius) - 2px)',
+    			sm: 'calc(var(--radius) - 4px)'
+    		}
+    	}
     },
-    plugins: [],
+    plugins: [require("tailwindcss-animate")],
   };
   

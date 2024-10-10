@@ -1,6 +1,8 @@
 "use client";
 import { ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { signIn } from 'next-auth/react'; 
+
 
 interface ModalProps {
   isOpen: boolean;

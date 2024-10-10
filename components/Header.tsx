@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import Modal from './auth/SignInModal'; 
 import { LogIn } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 
 export default function Header() {
     const { data: session } = useSession();
@@ -38,7 +39,6 @@ export default function Header() {
     return (
         <header className="flex justify-between items-center p-4 bg-white border-b border-gray-200">
             <h1 className="text-black text-xl font-semibold">My App</h1>
-
             {session ? (
                 <div className="relative" ref={dropdownRef}>
                     <img
@@ -64,9 +64,9 @@ export default function Header() {
                     </div>
                 </div>
             ) : (
-                <button onClick={openModal} className="flex bg-transparent border border-gray-400 text-black  items-center text-sm px-4 py-2 rounded hover:bg-gray-50 transition">
-                    <LogIn strokeWidth={1.5} size={16} className='mr-2' /> Sign In
-                </button>
+                <>
+                <Button onClick={openModal} className="flex text-white" ><LogIn strokeWidth={1.5} size={16} className='mr-2' /> Sign In</Button>
+                </>
             )}
 
             <Modal isOpen={isModalOpen} onClose={closeModal}>

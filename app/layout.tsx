@@ -1,22 +1,16 @@
-import '@/styles/globals.css';
 import { ReactNode } from 'react';
+import { SessionProvider } from "@/components/SessionProvider";
 import Header from '@/components/Header';
-import Providers from '@/components/Providers';
+import '../styles/globals.css';
 
-export default function RootLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-background text-foreground font-sans">
-        <Providers>
+      <body suppressHydrationWarning={true}>
+        <SessionProvider>
           <Header />
-          <main className="container mx-auto p-6">
-            {children}
-          </main>
-        </Providers>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );

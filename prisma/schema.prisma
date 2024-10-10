@@ -1,44 +1,30 @@
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
+ // This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id                      String   @id @default(cuid())
-  firstname        String?  
-  lastname         String? 
-  username       String   @unique
-  email               String?  @unique
-  image              String?
-  createdAt       DateTime @default(now())
-  lastLogin         DateTime?
-  ipAddress       String?
-  roleId               Int      @default(2)
-  emailVerified  DateTime?
-  accounts          Account[]
-  sessions           Session[]
-  
-  @@index([username])
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refreshToken       String? @db.Text
-  accessToken        String? @db.Text
-  expiresAt          Int?
-  tokenType          String
-  scope              String?
-  idToken            String?
-  sessionState       String?
-  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -51,10 +37,28 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  role          Role      @relation(fields: [roleId], references: [id])
+  roleId        Int       @default(1)
+}
+
 model VerificationToken {
   identifier String
-  token      String @unique
+  token      String   @unique
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
 }

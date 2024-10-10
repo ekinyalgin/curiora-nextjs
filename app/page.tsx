@@ -1,23 +1,18 @@
-'use client';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./api/auth/[...nextauth]/route";
 
-import { signOut, useSession } from 'next-auth/react';
-import '@/styles/globals.css';
-import { useEffect } from 'react';
+export default async function Home() {
+  const session = await getServerSession(authOptions);
 
-export default function Home() {
-    const { data: session, status } = useSession();
-
-    if (status === 'loading') {
-        return <p className="text-center text-primary">Loading...</p>;
-    }
-
-    return (
-        <div className="flex flex-col items-center justify-center py-6">
-            {session ? (
-               <div>Logged In</div>
-            ) : (
-              <div>Not Logged In</div>
-            )}
-        </div>
-    );
+  return (
+    <div className="container mx-auto px-6 py-8">
+      <h1 className="text-3xl font-bold mb-6">Welcome to Our Application</h1>
+      {session ? (
+        <p>Hello, {session.user?.name}! You are logged in.</p>
+      ) : (
+        <p>Please sign in to access all features.</p>
+      )}
+      {/* Add more content for your home page here */}
+    </div>
+  );
 }

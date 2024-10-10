@@ -6,7 +6,7 @@ import '../styles/globals.css';
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning={true}>
+      <body>
         <SessionProvider>
           <Header />
           {children}

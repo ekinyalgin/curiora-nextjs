@@ -8,7 +8,7 @@ export default async function Home() {
     <div className="container mx-auto px-6 py-8">
       <h1 className="text-3xl font-bold mb-6">Welcome to Our Application</h1>
       {session ? (
-        <p>Hello, {session.user?.name}! You are logged in.</p>
+        <p>Hello, {session.user?.name || 'User'}! You are logged in.</p>
       ) : (
         <p>Please sign in to access all features.</p>
       )}

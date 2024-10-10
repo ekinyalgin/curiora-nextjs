@@ -6,13 +6,21 @@ import SignInModal from './auth/SignInModal';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Button } from './ui/button';
+import {LockKeyhole } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Header() {
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const { data: session, status } = useSession();
   const pathname = usePathname();
 
-  // If the current path starts with '/admin', don't render the header
   if (pathname?.startsWith('/admin')) {
     return null;
   }
@@ -33,36 +41,48 @@ export default function Header() {
             {status === "loading" ? (
               <div>Loading...</div>
             ) : session ? (
-              <>
-                {session.user?.image && (
-                  <Image
-                    src={session.user.image}
-                    alt="User"
-                    width={32}
-                    height={32}
-                    className="rounded-full mr-2"
-                  />
-                )}
+              <div className="flex items-center">
                 {session.user?.role === 1 && (
                   <Link href="/admin" className="mr-4 text-blue-600 hover:text-blue-800">
-                    Admin Panel
+                    <LockKeyhole className='text-black w-5'/>
                   </Link>
                 )}
-                <Button
-                  onClick={() => signOut()}
-                  className=""
-                >
-                  Sign Out
-                </Button>
-              </>
+                <DropdownMenu>
+                <DropdownMenuTrigger className="focus:outline-none">
+                {session.user?.image ? (
+                      <Image
+                        src={session.user.image}
+                        alt="User"
+                        width={32}
+                        height={32}
+                        className="rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+                    )}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side='bottom' align='end'>
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      {session.user?.email}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className='cursor-pointer' onSelect={(event) => {
+                      event.preventDefault();
+                      signOut();
+                    }}>
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : (
-                <Button
+              <Button
                 onClick={() => setIsSignInModalOpen(true)}
-                className=""
-                variant={'outline'}
+                variant="outline"
               >
                 Sign In
-                </Button>
+              </Button>
             )}
           </div>
         </div>

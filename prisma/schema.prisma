@@ -1,0 +1,60 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                      String   @id @default(cuid())
+  firstname        String?  @map("firstname")
+  lastname         String?  @map("lastname")
+  username       String   @unique @map("username")
+  email               String?  @unique @map("email")
+  image              String?  @map("image")
+  createdAt       DateTime @default(now()) @map("created_at")
+  lastLogin         DateTime? @map("last_login")
+  ipAddress       String?  @map("ip_address")
+  roleId               Int      @default(2) @map("role_id")
+  emailVerified  DateTime? @map("email_verified")
+  accounts          Account[]
+  sessions           Session[]
+  
+  @@index([username])
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String  @map("user_id")
+  type               String  @map("type")
+  provider           String  @map("provider")
+  providerAccountId  String  @map("provider_account_id")
+  refreshToken       String? @db.Text @map("refresh_token")
+  accessToken        String? @db.Text @map("access_token")
+  expiresAt          Int?    @map("expires_at")
+  tokenType          String? @map("token_type")
+  scope              String? @map("scope")
+  idToken            String? @db.Text @map("id_token")
+  sessionState       String? @map("session_state")
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime @map("expires")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String @map("identifier")
+  token      String @unique @map("token")
+  expires    DateTime @map("expires")
+
+  @@unique([identifier, token])
+}

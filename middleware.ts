@@ -1,19 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export function middleware(req: NextRequest) {
-    // X-Forwarded-For başlığı üzerinden IP adresini almak
-    const ipAddress =
-        req.ip ||
-        req.headers.get('x-forwarded-for')?.split(',')[0] ||
-        '0.0.0.0'; // IP bulunamazsa varsayılan IP
+export function middleware(request: NextRequest) {
+    const ip = request.ip ?? request.headers.get('x-real-ip')
+    const forwardedFor = request.headers.get('x-forwarded-for')
 
-    // IP adresini bir çerez (cookie) olarak saklayalım
-    const response = NextResponse.next();
-    response.cookies.set('ipAddress', ipAddress);
+    const response = NextResponse.next()
+    response.headers.set('x-ip', ip ?? '')
+    response.headers.set('x-forwarded-for', forwardedFor ?? '')
 
-    return response;
+    return response
 }
 
 export const config = {
-    matcher: '/api/auth/:path*', // Sadece auth ile ilgili rotalara uygulanacak
-};
+    matcher: '/api/:path*',
+}

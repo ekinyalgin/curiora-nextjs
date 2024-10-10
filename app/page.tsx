@@ -12,7 +12,6 @@ export default async function Home() {
       ) : (
         <p>Please sign in to access all features.</p>
       )}
-      {/* Add more content for your home page here */}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import SignInModal from './auth/SignInModal';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { Button } from './ui/button';
 
 export default function Header() {
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
@@ -17,7 +18,7 @@ export default function Header() {
   }
 
   return (
-    <header className="bg-white shadow-md">
+    <header className="bg-white border-b border-gray-200">
       <nav className="container mx-auto px-6 py-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
@@ -47,20 +48,21 @@ export default function Header() {
                     Admin Panel
                   </Link>
                 )}
-                <button
+                <Button
                   onClick={() => signOut()}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                  className=""
                 >
                   Sign Out
-                </button>
+                </Button>
               </>
             ) : (
-              <button
+                <Button
                 onClick={() => setIsSignInModalOpen(true)}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                className=""
+                variant={'outline'}
               >
                 Sign In
-              </button>
+                </Button>
             )}
           </div>
         </div>

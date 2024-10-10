@@ -24,7 +24,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "px-4 py-2 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-offset-2",
+          "px-4 py-2 rounded-md transition-all",
           buttonVariants[variant], // Seçilen varyasyonun stilini uygula
           className
         )}

@@ -1,15 +1,16 @@
 {
-  "semi": true,
-  "singleQuote": true,
-  "trailingComma": "es5",
-  "tabWidth": 2,
-  "printWidth": 80,
-  "overrides": [
-    {
-      "files": "*.prisma",
-      "options": {
-        "parser": "prisma"
-      }
-    }
-  ]
+      "semi": true,
+      "singleQuote": true,
+      "trailingComma": "es5",
+      "tabWidth": 6,
+      "printWidth": 120,
+      "bracketSameLine": true,
+      "overrides": [
+            {
+                  "files": "*.prisma",
+                  "options": {
+                        "parser": "prisma"
+                  }
+            }
+      ]
 }

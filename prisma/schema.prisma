@@ -87,8 +87,11 @@ model Tag {
   description String?  @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-   language_id Int?
+  language_id Int?
   language    Language? @relation(fields: [language_id], references: [id])
+  posts       Post[]
+
+  @@unique([name, language_id])
 }
 
 model Category {
@@ -120,7 +123,7 @@ model Post {
   categoryId      Int
   createdAt       DateTime  @default(now())
   featuredImageId Int?
-  featuredImage   Media?   @relation(fields: [featuredImageId], references: [id])
+  featuredImage   Media?    @relation(fields: [featuredImageId], references: [id])
   languageId      Int
   lastActivityAt  DateTime  @updatedAt
   publishedAt     DateTime?
@@ -131,6 +134,7 @@ model Post {
   category        Category  @relation(fields: [categoryId], references: [id])
   language        Language  @relation(fields: [languageId], references: [id])
   comments        Comment[]
+  tags            Tag[]     // Add this line
 }
 
 model Comment {

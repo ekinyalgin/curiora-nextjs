@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LanguageSelect } from '@/components/ui/language-select';
 import { FeaturedImageSelect } from '@/components/ui/featured-image-select';
+import { TagInput } from '@/components/ui/tag-input';
 import slugify from 'slugify';
 
 export default function EditPost({ params }: { params: { id: string } }) {
@@ -22,7 +23,8 @@ export default function EditPost({ params }: { params: { id: string } }) {
             languageId: '',
             seoTitle: '',
             seoDescription: '',
-            featuredImageId: null,
+            featuredImageId: null as number | null,
+            tags: [] as string[],
       });
       const [users, setUsers] = useState([]);
       const [categories, setCategories] = useState([]);
@@ -48,6 +50,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                   categoryId: data.category.id.toString(),
                   languageId: data.language.id.toString(),
                   featuredImageId: data.featuredImageId,
+                  tags: data.tags ? data.tags.map((tag: { name: string }) => tag.name) : [],
             });
       }
 
@@ -71,10 +74,9 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                               ...post,
-                              userId: post.userId,
-                              categoryId: parseInt(post.categoryId),
-                              languageId: parseInt(post.languageId),
-                              featuredImageId: post.featuredImageId,
+                              user: { id: post.userId },
+                              category: { id: post.categoryId },
+                              language: { id: post.languageId },
                         }),
                   });
 
@@ -92,13 +94,17 @@ export default function EditPost({ params }: { params: { id: string } }) {
       const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             const { name, value } = e.target;
             setPost((prev) => ({ ...prev, [name]: value }));
-            if (name === 'title' && !post.slug) {
+            if (name === 'title') {
                   setPost((prev) => ({ ...prev, slug: slugify(value, { lower: true, strict: true }) }));
             }
       };
 
-      const handleFeaturedImageSelect = (imageId: number) => {
+      const handleFeaturedImageSelect = (imageId: number | null) => {
             setPost((prev) => ({ ...prev, featuredImageId: imageId }));
+      };
+
+      const handleTagsChange = (newTags: string[]) => {
+            setPost((prev) => ({ ...prev, tags: newTags }));
       };
 
       return (
@@ -155,7 +161,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                               <SelectValue placeholder="Select user" />
                         </SelectTrigger>
                         <SelectContent>
-                              {users.map((user) => (
+                              {users.map((user: any) => (
                                     <SelectItem key={user.id} value={user.id}>
                                           {user.name}
                                     </SelectItem>
@@ -169,7 +175,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                               <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                              {categories.map((category) => (
+                              {categories.map((category: any) => (
                                     <SelectItem key={category.id} value={category.id.toString()}>
                                           {category.name}
                                     </SelectItem>
@@ -181,6 +187,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         onChange={(value) => setPost((prev) => ({ ...prev, languageId: value }))}
                   />
                   <FeaturedImageSelect value={post.featuredImageId} onChange={handleFeaturedImageSelect} />
+                  <TagInput tags={post.tags} setTags={handleTagsChange} />
                   <Input
                         name="seoTitle"
                         label="SEO Title"

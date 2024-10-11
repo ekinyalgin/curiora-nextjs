@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LanguageSelect } from '@/components/ui/language-select';
-import { ImageUpload } from '@/components/ui/image-upload';
+import { FeaturedImageSelect } from '@/components/ui/featured-image-select';
+import { TagInput } from '@/components/ui/tag-input';
 import slugify from 'slugify';
 
 export default function NewPost() {
@@ -22,7 +23,8 @@ export default function NewPost() {
             languageId: '',
             seoTitle: '',
             seoDescription: '',
-            featuredImage: '',
+            featuredImageId: null,
+            tags: [] as string[],
       });
       const [users, setUsers] = useState([]);
       const [categories, setCategories] = useState([]);
@@ -73,23 +75,17 @@ export default function NewPost() {
       const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             const { name, value } = e.target;
             setPost((prev) => ({ ...prev, [name]: value }));
-            if (name === 'title' && !post.slug) {
+            if (name === 'title') {
                   setPost((prev) => ({ ...prev, slug: slugify(value, { lower: true, strict: true }) }));
             }
       };
 
-      const handleImageUpload = (imageUrl: string) => {
-            setPost((prev) => ({ ...prev, featuredImage: imageUrl }));
+      const handleFeaturedImageSelect = (imageId: number) => {
+            setPost((prev) => ({ ...prev, featuredImageId: imageId }));
       };
 
-      const handleImageDelete = async (imageUrl: string) => {
-            try {
-                  await fetch(`/api/upload?filePath=${encodeURIComponent(imageUrl)}`, { method: 'DELETE' });
-                  setPost((prev) => ({ ...prev, featuredImage: '' }));
-            } catch (error) {
-                  console.error('Error deleting image:', error);
-                  alert('Failed to delete image. Please try again.');
-            }
+      const handleTagsChange = (newTags: string[]) => {
+            setPost((prev) => ({ ...prev, tags: newTags }));
       };
 
       return (
@@ -175,11 +171,8 @@ export default function NewPost() {
                         value={post.languageId}
                         onChange={(value) => setPost((prev) => ({ ...prev, languageId: value }))}
                   />
-                  <ImageUpload
-                        onImageUpload={handleImageUpload}
-                        onImageDelete={handleImageDelete}
-                        initialImage={post.featuredImage}
-                  />
+                  <FeaturedImageSelect value={post.featuredImageId} onChange={handleFeaturedImageSelect} />
+                  <TagInput tags={post.tags} setTags={handleTagsChange} />
                   <Input
                         name="seoTitle"
                         label="SEO Title"

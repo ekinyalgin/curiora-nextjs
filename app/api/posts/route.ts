@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import slugify from 'slugify';
 
 export async function GET(request: Request) {
       const { searchParams } = new URL(request.url);
@@ -11,11 +12,11 @@ export async function GET(request: Request) {
                   where: {
                         OR: [{ title: { contains: search } }, { content: { contains: search } }],
                   },
-                  include: { user: true, category: true, language: true },
+                  include: { user: true, category: true, language: true, tags: true },
             });
       } else {
             posts = await prisma.post.findMany({
-                  include: { user: true, category: true, language: true },
+                  include: { user: true, category: true, language: true, tags: true },
             });
       }
 
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
       try {
             const body = await request.json();
-            const { user, category, language, ...postData } = body;
+            const { user, category, language, tags, ...postData } = body;
 
             if (!user || !category || !language) {
                   return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -34,11 +35,26 @@ export async function POST(request: Request) {
             const post = await prisma.post.create({
                   data: {
                         ...postData,
-                        userId: user.id, // Burada değişiklik yaptık
+                        userId: user.id,
                         categoryId: parseInt(category.id),
                         languageId: parseInt(language.id),
+                        tags: {
+                              connectOrCreate: tags.map((tag: string) => ({
+                                    where: {
+                                          name_language_id: {
+                                                name: tag,
+                                                language_id: parseInt(language.id),
+                                          },
+                                    },
+                                    create: {
+                                          name: tag,
+                                          slug: slugify(tag, { lower: true }),
+                                          language_id: parseInt(language.id),
+                                    },
+                              })),
+                        },
                   },
-                  include: { user: true, category: true, language: true },
+                  include: { user: true, category: true, language: true, tags: true },
             });
             return NextResponse.json(post, { status: 201 });
       } catch (error) {

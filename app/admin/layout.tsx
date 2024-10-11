@@ -49,6 +49,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                                           Settings
                                     </Link>
                                     <Link
+                                          href="/admin/tags"
+                                          className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
+                                          Tags
+                                    </Link>
+                                    <Link
                                           href="/admin/languages"
                                           className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
                                           Languages

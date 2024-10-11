@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
@@ -11,7 +12,7 @@ interface AdminListLayoutProps<T> {
       columns: any[];
       data: T[];
       onEdit?: (id: number) => void;
-      onDelete?: (id: number) => void;
+      onDelete?: (id: number) => Promise<void>;
 }
 
 export function AdminListLayout<T extends { id: number }>({
@@ -37,8 +38,7 @@ export function AdminListLayout<T extends { id: number }>({
                                     <Button
                                           variant="ghost"
                                           className="hover:bg-transparent p-1"
-                                          onClick={() => onEdit(item.id)}
-                                    >
+                                          onClick={() => onEdit(item.id)}>
                                           <Settings2
                                                 strokeWidth="2"
                                                 className="w-4 h-4 text-gray-500 hover:text-black transition"
@@ -50,11 +50,10 @@ export function AdminListLayout<T extends { id: number }>({
                                           <Button
                                                 variant="ghost"
                                                 className="hover:bg-transparent p-1"
-                                                onClick={() => {
-                                                      onDelete(item.id);
+                                                onClick={async () => {
+                                                      await onDelete(item.id);
                                                       setDeleteConfirmId(null);
-                                                }}
-                                          >
+                                                }}>
                                                 <Check
                                                       strokeWidth="3"
                                                       className="w-4 h-4 text-green-500 hover:text-green-700 transition"
@@ -64,8 +63,7 @@ export function AdminListLayout<T extends { id: number }>({
                                           <Button
                                                 variant="ghost"
                                                 className="hover:bg-transparent p-1"
-                                                onClick={() => setDeleteConfirmId(item.id)}
-                                          >
+                                                onClick={() => setDeleteConfirmId(item.id)}>
                                                 <X
                                                       strokeWidth="3"
                                                       className="w-4 h-4 text-gray-500 hover:text-red-500 transition"

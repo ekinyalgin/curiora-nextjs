@@ -67,11 +67,21 @@ model Role {
   users       User[]
 }
 
-// Diğer model tanımlamaları...
-
 model Language {
   id        Int      @id @default(autoincrement())
   code      String   @unique
   name      String
   isDefault Boolean  @default(false)
+    tags  Tag[]
+}
+
+model Tag {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+   language_id Int?
+  language    Language? @relation(fields: [language_id], references: [id])
 }

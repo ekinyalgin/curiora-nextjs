@@ -66,3 +66,12 @@ model Role {
   description String @db.Text
   users       User[]
 }
+
+// Diğer model tanımlamaları...
+
+model Language {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  isDefault Boolean  @default(false)
+}

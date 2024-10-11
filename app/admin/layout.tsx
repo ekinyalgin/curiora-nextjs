@@ -6,6 +6,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AdminHeader from '@/components/AdminHeader';
+import { FileText } from 'lucide-react';
+import { Users } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
       const { data: session, status } = useSession();
@@ -29,40 +32,73 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             return null;
       }
 
+      const menuItems = [
+            {
+                  title: 'Dashboard',
+                  href: '/admin',
+                  icon: 'Home',
+            },
+            {
+                  title: 'Roles',
+                  href: '/admin/roles',
+                  icon: 'Shield',
+            },
+            {
+                  title: 'Settings',
+                  href: '/admin/settings',
+                  icon: 'Settings',
+            },
+            {
+                  title: 'Tags',
+                  href: '/admin/tags',
+                  icon: 'Tag',
+            },
+            {
+                  title: 'Categories',
+                  href: '/admin/categories',
+                  icon: 'List',
+            },
+            {
+                  title: 'Languages',
+                  href: '/admin/languages',
+                  icon: 'Globe',
+            },
+            {
+                  title: 'Posts',
+                  href: '/admin/posts',
+                  icon: FileText,
+            },
+            {
+                  title: 'Users',
+                  href: '/admin/users',
+                  icon: Users,
+            },
+            {
+                  title: 'Media',
+                  href: '/admin/media',
+                  icon: Users,
+            },
+            {
+                  title: 'Comments',
+                  href: '/admin/comments',
+                  icon: MessageSquare,
+            },
+      ];
+
       return (
             <div className="flex flex-col h-screen bg-gray-100">
                   <AdminHeader />
                   <div className="flex flex-1">
                         <aside className="w-40 bg-white text-sm">
                               <nav className="mt-4">
-                                    <Link href="/admin" className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
-                                          Dashboard
-                                    </Link>
-                                    <Link
-                                          href="/admin/roles"
-                                          className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
-                                          Roles
-                                    </Link>
-                                    <Link
-                                          href="/admin/settings"
-                                          className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
-                                          Settings
-                                    </Link>
-                                    <Link
-                                          href="/admin/tags"
-                                          className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
-                                          Tags
-                                    </Link>
-                                    <Link
-                                          href="/admin/categories"
-                                          className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
-                                          Categories
-                                    </Link>
-                                    <Link
-                                          href="/admin/languages"
-                                          className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
-                                          Languages
-                                    </Link>
+                                    {menuItems.map((item) => (
+                                          <Link
+                                                key={item.title}
+                                                href={item.href}
+                                                className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
+                                                {item.title}
+                                          </Link>
+                                    ))}
                                     <Link href="/" className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
                                           Back to Site
                                     </Link>

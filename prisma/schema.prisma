@@ -39,7 +39,7 @@ model Session {
 
 model User {
   id            String    @id @default(cuid())
-  name     String?
+  name          String?
   username      String?
   email         String?   @unique
   emailVerified DateTime?
@@ -50,6 +50,9 @@ model User {
   roleId        Int       @default(2)
   ipAddress     String?
   lastLogin     DateTime?
+  posts         Post[]
+  comments      Comment[]
+  media         Media[]
 }
 
 model VerificationToken {
@@ -74,7 +77,7 @@ model Language {
   isDefault Boolean  @default(false)
     tags  Tag[]
     categories  Category[]
-
+    posts           Post[]
 }
 
 model Tag {
@@ -102,4 +105,58 @@ model Category {
   seoTitle       String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  posts           Post[]
+}
+
+model Post {
+  id              Int       @id @default(autoincrement())
+  title           String
+  slug            String    @unique
+  content         String    @db.Text
+  status          String    // 'published', 'draft', 'archived'
+  type            String    // 'article', 'question'
+  archivedAt      DateTime?
+  userId          String   
+  categoryId      Int
+  createdAt       DateTime  @default(now())
+  featuredImageId Int?
+  featuredImage   Media?   @relation(fields: [featuredImageId], references: [id])
+  languageId      Int
+  lastActivityAt  DateTime  @updatedAt
+  publishedAt     DateTime?
+  seoTitle        String?
+  seoDescription  String?   @db.Text
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id])
+  category        Category  @relation(fields: [categoryId], references: [id])
+  language        Language  @relation(fields: [languageId], references: [id])
+  comments        Comment[]
+}
+
+model Comment {
+  id               Int       @id @default(autoincrement())
+  status           String    // 'approved', 'pending', 'archived'
+  archivedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  commentText      String    @db.Text
+  parentCommentId  Int?
+  postId           Int
+  updatedAt        DateTime  @updatedAt
+  userId           String
+  parentComment    Comment?  @relation("CommentToComment", fields: [parentCommentId], references: [id])
+  childComments    Comment[] @relation("CommentToComment")
+  post             Post      @relation(fields: [postId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
+}
+
+model Media {
+  id        Int      @id @default(autoincrement())
+  fileName  String
+  filePath  String
+  fileType  String
+  fileSize  Int
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  posts Post[] // Bu satırı ekleyin
 }

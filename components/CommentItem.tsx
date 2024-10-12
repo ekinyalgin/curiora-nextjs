@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Avatar from 'react-avatar'
 import { RelativeDate } from './RelativeDate'
 import CommentActions from './CommentActions'
 import { useSession } from 'next-auth/react'
@@ -141,9 +142,7 @@ export default function CommentItem({
                                           className="rounded-full"
                                     />
                               ) : (
-                                    <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                                          <span className="text-xl font-bold text-white">{comment.user.name[0]}</span>
-                                    </div>
+                                    <Avatar name={comment.user.name} size="40" round={true} textSizeRatio={3} />
                               )}
                               <div>
                                     <div className="font-bold">{comment.user.name}</div>

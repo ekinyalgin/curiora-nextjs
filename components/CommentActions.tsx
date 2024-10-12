@@ -9,7 +9,7 @@ interface CommentActionsProps {
       onSoftDelete: () => Promise<void>
       onHardDelete: () => Promise<void>
       onRestore: () => Promise<void>
-      onStatusChange: (newStatus: string) => Promise<void>
+      onStatusChange: (newStatus: string, archivedAt?: Date) => Promise<void>
       commentText: string
       canEditDelete: boolean
       isAdmin: boolean
@@ -76,6 +76,14 @@ export default function CommentActions({
             setIsHardDeleteConfirm(false)
       }
 
+      const handleStatusChange = (newStatus: string) => {
+            if (newStatus === 'archived') {
+                  onStatusChange(newStatus, new Date())
+            } else {
+                  onStatusChange(newStatus, null) // archivedAt'i null olarak gönder
+            }
+      }
+
       return (
             <div>
                   {!isDeleted && (
@@ -131,13 +139,13 @@ export default function CommentActions({
                               {status === 'pending' && (
                                     <>
                                           <button
-                                                onClick={() => onStatusChange('approved')}
+                                                onClick={() => handleStatusChange('approved')}
                                                 className="text-green-500 text-sm mt-2 mr-2"
                                           >
                                                 <FaCheck />
                                           </button>
                                           <button
-                                                onClick={() => onStatusChange('archived')}
+                                                onClick={() => handleStatusChange('archived')}
                                                 className="text-gray-500 text-sm mt-2 mr-2"
                                           >
                                                 <FaArchive />
@@ -147,13 +155,13 @@ export default function CommentActions({
                               {status === 'approved' && (
                                     <>
                                           <button
-                                                onClick={() => onStatusChange('pending')}
+                                                onClick={() => handleStatusChange('pending')}
                                                 className="text-yellow-500 text-sm mt-2 mr-2"
                                           >
                                                 <FaClock />
                                           </button>
                                           <button
-                                                onClick={() => onStatusChange('archived')}
+                                                onClick={() => handleStatusChange('archived')}
                                                 className="text-gray-500 text-sm mt-2 mr-2"
                                           >
                                                 <FaArchive />
@@ -163,13 +171,13 @@ export default function CommentActions({
                               {status === 'archived' && (
                                     <>
                                           <button
-                                                onClick={() => onStatusChange('approved')}
+                                                onClick={() => handleStatusChange('approved')}
                                                 className="text-green-500 text-sm mt-2 mr-2"
                                           >
                                                 <FaCheck />
                                           </button>
                                           <button
-                                                onClick={() => onStatusChange('pending')}
+                                                onClick={() => handleStatusChange('pending')}
                                                 className="text-yellow-500 text-sm mt-2 mr-2"
                                           >
                                                 <FaClock />

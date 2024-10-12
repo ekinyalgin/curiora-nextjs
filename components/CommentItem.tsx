@@ -12,7 +12,7 @@ interface CommentItemProps {
       onReply: (parentId: number, text: string) => Promise<void>
       onEdit: (commentId: number, text: string) => Promise<void>
       onDelete: (commentId: number) => Promise<void>
-      onStatusChange: (commentId: number, newStatus: string) => Promise<void>
+      onStatusChange: (commentId: number, newStatus: string, archivedAt?: Date) => Promise<void>
       onSoftDelete: (commentId: number) => Promise<void>
       onHardDelete: (commentId: number) => Promise<void>
       onRestore: (commentId: number) => Promise<void>
@@ -65,9 +65,9 @@ export default function CommentItem({
             await onDelete(comment.id)
       }
 
-      const handleStatusChange = async (newStatus: string) => {
-            await onStatusChange(comment.id, newStatus)
-            updateComment(comment.id, { ...comment, status: newStatus })
+      const handleStatusChange = async (newStatus: string, archivedAt?: Date) => {
+            await onStatusChange(comment.id, newStatus, archivedAt)
+            updateComment(comment.id, { ...comment, status: newStatus, archivedAt })
       }
 
       const handleSoftDelete = async () => {

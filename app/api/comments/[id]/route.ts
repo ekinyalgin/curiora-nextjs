@@ -39,13 +39,18 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
       const id = parseInt(params.id)
       const body = await request.json()
-      const { status, isDeleted } = body
+      const { status, isDeleted, archivedAt } = body
 
       try {
             const updatedComment = await prisma.comment.update({
                   where: { id },
                   data: {
-                        ...(status && { status: status as 'pending' | 'approved' | 'archived' }),
+                        ...(status && {
+                              status: status as 'pending' | 'approved' | 'archived',
+                              // Eğer status 'archived' değilse, archivedAt'i null yap
+                              archivedAt:
+                                    status === 'archived' ? (archivedAt ? new Date(archivedAt) : new Date()) : null
+                        }),
                         ...(isDeleted !== undefined && { isDeleted })
                   },
                   include: { user: true }

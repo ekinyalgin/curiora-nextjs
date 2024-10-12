@@ -182,14 +182,14 @@ export default function CommentSection({ comments: initialComments, postId, isAd
             }
       }
 
-      const handleStatusChange = async (commentId: number, newStatus: string) => {
+      const handleStatusChange = async (commentId: number, newStatus: string, archivedAt?: Date) => {
             try {
                   const response = await fetch(`/api/comments/${commentId}`, {
                         method: 'PATCH',
                         headers: {
                               'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ status: newStatus })
+                        body: JSON.stringify({ status: newStatus, archivedAt })
                   })
 
                   if (!response.ok) {

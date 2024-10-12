@@ -1,28 +1,32 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import SignInModal from './auth/SignInModal'
-import { FaEdit, FaTrash, FaCheck, FaTimes } from 'react-icons/fa'
+import { FaEdit, FaTrash, FaCheck, FaTimes, FaArchive, FaClock } from 'react-icons/fa'
 
 interface CommentActionsProps {
       onReply: (text: string) => Promise<void>
       onEdit: () => void
       onDelete: () => Promise<void>
+      onStatusChange: (newStatus: string) => Promise<void>
       commentText: string
       canEditDelete: boolean
       setActiveTextarea: (id: string | null) => void
       activeTextareaId: string
       isActiveTextarea: boolean
+      status: string
 }
 
 export default function CommentActions({
       onReply,
       onEdit,
       onDelete,
+      onStatusChange,
       commentText,
       canEditDelete,
       setActiveTextarea,
       activeTextareaId,
-      isActiveTextarea
+      isActiveTextarea,
+      status
 }: CommentActionsProps) {
       const { data: session } = useSession()
       const [isDeletingConfirm, setIsDeletingConfirm] = useState(false)
@@ -75,6 +79,54 @@ export default function CommentActions({
                                           <FaTimes />
                                     </button>
                               )}
+                              {status === 'pending' && (
+                                    <>
+                                          <button
+                                                onClick={() => onStatusChange('approved')}
+                                                className="text-green-500 text-sm mt-2 mr-2"
+                                          >
+                                                <FaCheck />
+                                          </button>
+                                          <button
+                                                onClick={() => onStatusChange('archived')}
+                                                className="text-gray-500 text-sm mt-2 mr-2"
+                                          >
+                                                <FaArchive />
+                                          </button>
+                                    </>
+                              )}
+                              {status === 'approved' && (
+                                    <>
+                                          <button
+                                                onClick={() => onStatusChange('pending')}
+                                                className="text-yellow-500 text-sm mt-2 mr-2"
+                                          >
+                                                <FaClock />
+                                          </button>
+                                          <button
+                                                onClick={() => onStatusChange('archived')}
+                                                className="text-gray-500 text-sm mt-2 mr-2"
+                                          >
+                                                <FaArchive />
+                                          </button>
+                                    </>
+                              )}
+                              {status === 'archived' && (
+                                    <>
+                                          <button
+                                                onClick={() => onStatusChange('approved')}
+                                                className="text-green-500 text-sm mt-2 mr-2"
+                                          >
+                                                <FaCheck />
+                                          </button>
+                                          <button
+                                                onClick={() => onStatusChange('pending')}
+                                                className="text-yellow-500 text-sm mt-2 mr-2"
+                                          >
+                                                <FaClock />
+                                          </button>
+                                    </>
+                              )}
                         </>
                   )}
 
@@ -89,9 +141,15 @@ export default function CommentActions({
                               />
                               <button
                                     onClick={submitReply}
-                                    className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg"
+                                    className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg mr-2"
                               >
                                     Submit Reply
+                              </button>
+                              <button
+                                    onClick={() => setActiveTextarea(null)}
+                                    className="mt-2 px-4 py-2 bg-gray-500 text-white rounded-lg"
+                              >
+                                    Cancel
                               </button>
                         </div>
                   )}

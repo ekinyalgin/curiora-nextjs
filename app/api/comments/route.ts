@@ -6,15 +6,19 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 export async function GET(request: Request) {
       const { searchParams } = new URL(request.url)
       const postId = searchParams.get('postId')
+      const session = await getServerSession(authOptions)
 
       if (!postId) {
             return NextResponse.json({ error: 'Post ID is required' }, { status: 400 })
       }
 
+      const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 1
+
       const comments = await prisma.comment.findMany({
             where: {
                   postId: parseInt(postId),
-                  parentCommentId: null // Only fetch top-level comments
+                  parentCommentId: null, // Only fetch top-level comments
+                  ...(isAdmin ? {} : { status: 'approved' }) // If not admin, only fetch approved comments
             },
             include: {
                   user: true,
@@ -25,7 +29,8 @@ export async function GET(request: Request) {
                                     include: {
                                           user: true
                                     }
-                              }
+                              },
+                              ...(isAdmin ? {} : { where: { status: 'approved' } }) // If not admin, only fetch approved child comments
                         }
                   }
             },

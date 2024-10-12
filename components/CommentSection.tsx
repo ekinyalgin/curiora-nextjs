@@ -9,6 +9,7 @@ interface Comment {
       id: number
       commentText: string
       createdAt: string
+      status: 'pending' | 'approved' | 'archived'
       user: {
             name: string
             image?: string
@@ -17,7 +18,13 @@ interface Comment {
       parentCommentId: number | null
 }
 
-export default function CommentSection({ comments: initialComments, postId }) {
+interface CommentSectionProps {
+      comments: Comment[]
+      postId: number
+      isAdmin: boolean
+}
+
+export default function CommentSection({ comments: initialComments, postId, isAdmin }: CommentSectionProps) {
       const { data: session } = useSession()
       const [newComment, setNewComment] = useState('')
       const [comments, setComments] = useState<Comment[]>([])
@@ -180,6 +187,47 @@ export default function CommentSection({ comments: initialComments, postId }) {
             }
       }
 
+      const handleStatusChange = async (commentId: number, newStatus: string) => {
+            try {
+                  const response = await fetch(`/api/comments/${commentId}`, {
+                        method: 'PATCH',
+                        headers: {
+                              'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status: newStatus })
+                  })
+
+                  if (!response.ok) {
+                        const errorData = await response.json()
+                        throw new Error(errorData.error || 'Failed to change comment status')
+                  }
+
+                  const updatedComment = await response.json()
+
+                  setComments((prevComments) => {
+                        return prevComments.map((comment) => {
+                              if (comment.id === commentId) {
+                                    return { ...comment, status: updatedComment.status }
+                              }
+                              if (comment.childComments) {
+                                    return {
+                                          ...comment,
+                                          childComments: comment.childComments.map((childComment) =>
+                                                childComment.id === commentId
+                                                      ? { ...childComment, status: updatedComment.status }
+                                                      : childComment
+                                          )
+                                    }
+                              }
+                              return comment
+                        })
+                  })
+            } catch (error) {
+                  console.error('Error changing comment status:', error)
+                  alert('Failed to change comment status. Please try again.')
+            }
+      }
+
       return (
             <section className="mt-8">
                   <h2 className="text-2xl font-bold mb-4">Comments</h2>
@@ -191,8 +239,10 @@ export default function CommentSection({ comments: initialComments, postId }) {
                               onReply={handleReply}
                               onEdit={handleEdit}
                               onDelete={handleDelete}
+                              onStatusChange={handleStatusChange}
                               activeTextarea={activeTextarea}
                               setActiveTextarea={setActiveTextarea}
+                              isAdmin={isAdmin}
                         />
                   ))}
                   {session ? (

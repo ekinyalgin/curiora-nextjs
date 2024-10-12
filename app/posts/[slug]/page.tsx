@@ -25,7 +25,7 @@ async function PostContent({ slug }: { slug: string }) {
                   include: {
                         user: {
                               include: {
-                                    role: true // Include the role information
+                                    role: true
                               }
                         },
                         category: true,
@@ -33,7 +33,9 @@ async function PostContent({ slug }: { slug: string }) {
                         tags: true,
                         comments: {
                               include: { user: true },
-                              where: { status: 'approved' },
+                              ...(session?.user?.role === 'admin' || session?.user?.role === 1
+                                    ? {}
+                                    : { where: { status: 'approved' } }),
                               orderBy: { createdAt: 'desc' }
                         }
                   }
@@ -47,7 +49,7 @@ async function PostContent({ slug }: { slug: string }) {
             notFound()
       }
 
-      const isAdmin = session?.user?.role === 1
+      const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 1
 
       // Transform the post to include roleName directly in the user object
       const transformedPost = {
@@ -61,7 +63,7 @@ async function PostContent({ slug }: { slug: string }) {
       return (
             <div className="container mx-auto px-4 py-8">
                   <PostComponent post={transformedPost} showEditLink={isAdmin} />
-                  <CommentSection comments={post.comments} postId={post.id} />
+                  <CommentSection comments={post.comments} postId={post.id} isAdmin={isAdmin} />
             </div>
       )
 }

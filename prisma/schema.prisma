@@ -137,9 +137,15 @@ model Post {
   tags            Tag[]     // Add this line
 }
 
+enum Status {
+  pending
+  approved
+  archived
+}
+
 model Comment {
   id               Int       @id @default(autoincrement())
-  status           String    // 'approved', 'pending', 'archived'
+  status           Status    @default(pending)
   archivedAt       DateTime?
   createdAt        DateTime  @default(now())
   commentText      String    @db.Text

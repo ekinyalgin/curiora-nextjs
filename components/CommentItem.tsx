@@ -10,6 +10,7 @@ interface CommentItemProps {
       onReply: (parentId: number, text: string) => Promise<void>
       onEdit: (commentId: number, text: string) => Promise<void>
       onDelete: (commentId: number) => Promise<void>
+      onStatusChange: (commentId: number, newStatus: string) => Promise<void>
       isChild?: boolean
       topLevelParentId?: number
       activeTextarea: string | null
@@ -22,6 +23,7 @@ export default function CommentItem({
       onReply,
       onEdit,
       onDelete,
+      onStatusChange,
       isChild = false,
       topLevelParentId,
       activeTextarea,
@@ -45,11 +47,26 @@ export default function CommentItem({
             await onDelete(comment.id)
       }
 
+      const handleStatusChange = async (newStatus: string) => {
+            await onStatusChange(comment.id, newStatus)
+      }
+
       const canEditDelete = session && (session.user.id === comment.userId || session.user.role === 'admin')
+
+      const getCommentStyle = () => {
+            switch (comment.status) {
+                  case 'pending':
+                        return 'opacity-50'
+                  case 'archived':
+                        return 'border-red-500 border-2'
+                  default:
+                        return ''
+            }
+      }
 
       return (
             <div className={`mb-4 ${isChild ? 'ml-10' : ''}`}>
-                  <div className="bg-gray-100 p-4 rounded-lg">
+                  <div className={`bg-gray-100 p-4 rounded-lg ${getCommentStyle()}`}>
                         <div className="flex items-center space-x-2 mb-2">
                               {comment.user.image ? (
                                     <Image
@@ -99,11 +116,13 @@ export default function CommentItem({
                                           onReply={handleReply}
                                           onEdit={() => setActiveTextarea(`edit-${comment.id}`)}
                                           onDelete={handleDelete}
+                                          onStatusChange={handleStatusChange}
                                           commentText={comment.commentText}
                                           canEditDelete={canEditDelete}
                                           setActiveTextarea={setActiveTextarea}
                                           activeTextareaId={`reply-${comment.id}`}
                                           isActiveTextarea={activeTextarea === `reply-${comment.id}`}
+                                          status={comment.status}
                                     />
                               </>
                         )}
@@ -121,6 +140,7 @@ export default function CommentItem({
                                                 onReply={onReply}
                                                 onEdit={onEdit}
                                                 onDelete={onDelete}
+                                                onStatusChange={onStatusChange}
                                                 isChild={true}
                                                 topLevelParentId={isChild ? topLevelParentId : comment.id}
                                                 activeTextarea={activeTextarea}

@@ -139,6 +139,7 @@ model Post {
   tags            Tag[]     // Add this line
   votes      PostVote[]
   voteCount  PostVoteCount?
+  commentCount Int @default(0)
 }
 
 enum Status {

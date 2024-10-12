@@ -83,12 +83,6 @@ async function PostContent({ slug }: { slug: string }) {
       return (
             <div className="container mx-auto px-4 py-8">
                   <PostComponent post={transformedPost} showEditLink={isAdmin} />
-                  <CommentSection
-                        comments={transformedPost.comments}
-                        postId={post.id}
-                        isAdmin={isAdmin}
-                        isArchived={isArchived}
-                  />
             </div>
       )
 }

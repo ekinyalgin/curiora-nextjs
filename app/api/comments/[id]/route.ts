@@ -73,17 +73,26 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       const id = parseInt(params.id)
 
       try {
-            // Önce alt yorumları silelim
-            await prisma.comment.deleteMany({
-                  where: {
-                        parentCommentId: id
-                  }
+            const comment = await prisma.comment.findUnique({
+                  where: { id },
+                  include: { childComments: true }
             })
 
-            // Şimdi ana yorumu silelim
-            await prisma.comment.delete({
-                  where: { id }
-            })
+            if (!comment) {
+                  return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
+            }
+
+            const totalComments = 1 + comment.childComments.length // Parent + children
+
+            const [deletedComment, updatedPost] = await prisma.$transaction([
+                  prisma.comment.delete({
+                        where: { id }
+                  }),
+                  prisma.post.update({
+                        where: { id: comment.postId },
+                        data: { commentCount: { decrement: totalComments } }
+                  })
+            ])
 
             return NextResponse.json({ message: 'Comment and its replies deleted successfully' })
       } catch (error) {

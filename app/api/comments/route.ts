@@ -55,18 +55,24 @@ export async function POST(request: Request) {
       }
 
       try {
-            const comment = await prisma.comment.create({
-                  data: {
-                        postId: parseInt(postId),
-                        userId,
-                        commentText,
-                        status,
-                        parentCommentId: parentCommentId ? parseInt(parentCommentId) : null
-                  },
-                  include: {
-                        user: true
-                  }
-            })
+            const [comment, updatedPost] = await prisma.$transaction([
+                  prisma.comment.create({
+                        data: {
+                              postId: parseInt(postId),
+                              userId,
+                              commentText,
+                              status,
+                              parentCommentId: parentCommentId ? parseInt(parentCommentId) : null
+                        },
+                        include: {
+                              user: true
+                        }
+                  }),
+                  prisma.post.update({
+                        where: { id: parseInt(postId) },
+                        data: { commentCount: { increment: 1 } }
+                  })
+            ])
 
             return NextResponse.json(comment, { status: 201 })
       } catch (error) {

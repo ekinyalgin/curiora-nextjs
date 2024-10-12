@@ -165,15 +165,20 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                                     ))}
                         </div>
 
-                        <VoteComponent
-                              itemId={post.id}
-                              itemType="post"
-                              initialUpVotes={voteCount.upVotes}
-                              initialDownVotes={voteCount.downVotes}
-                              userVote={userVote}
-                              onVote={handleVote}
-                              isDisabled={isArchived}
-                        />
+                        <div className="flex items-center space-x-4">
+                              <VoteComponent
+                                    itemId={post.id}
+                                    itemType="post"
+                                    initialUpVotes={voteCount.upVotes}
+                                    initialDownVotes={voteCount.downVotes}
+                                    userVote={userVote}
+                                    onVote={handleVote}
+                                    isDisabled={isArchived}
+                              />
+                              <span className="text-sm text-gray-500">
+                                    {post.commentCount} comment{post.commentCount !== 1 ? 's' : ''}
+                              </span>
+                        </div>
                   </article>
                   <CommentSection
                         comments={post.comments}

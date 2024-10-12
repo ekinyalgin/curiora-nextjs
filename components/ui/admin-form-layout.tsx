@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface AdminFormLayoutProps {
       title: string;

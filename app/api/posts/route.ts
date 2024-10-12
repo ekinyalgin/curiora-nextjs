@@ -15,7 +15,7 @@ export async function GET(request: Request) {
                   include: {
                         user: {
                               include: {
-                                    role: true // Rolü dahil ediyoruz
+                                    role: true // This includes the role information
                               }
                         },
                         category: true,
@@ -27,21 +27,25 @@ export async function GET(request: Request) {
             posts = await prisma.post.findMany({
                   include: {
                         user: {
-                              include: { role: true }
+                              include: { role: true } // This includes the role information
                         },
                         category: true,
                         language: true,
                         tags: true
                   }
             })
-            posts.forEach((post) => {
-                  if (!post.user.role) {
-                        console.warn(`User ${post.user.name} has no role assigned.`)
-                  }
-            })
       }
 
-      return NextResponse.json(posts)
+      // Transform the posts to include roleName directly in the user object
+      const transformedPosts = posts.map((post) => ({
+            ...post,
+            user: {
+                  ...post.user,
+                  roleName: post.user.role?.name || 'User'
+            }
+      }))
+
+      return NextResponse.json(transformedPosts)
 }
 
 export async function POST(request: Request) {

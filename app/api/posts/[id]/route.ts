@@ -21,25 +21,20 @@ export async function GET(request: Request, { params }: { params: { id: string }
                   }
             })
 
-            // Hata ayıklamak için:
-            if (!post?.user?.role) {
-                  console.error(`User ${post?.user?.name} has no role!`)
+            if (!post) {
+                  return NextResponse.json({ error: 'Post not found' }, { status: 404 })
             }
 
-            // JSON yanıtınızı düzenleyin:
-            return NextResponse.json({
+            // Kullanıcı rolünü doğrudan içeren bir nesne oluşturalım
+            const postWithUserRole = {
                   ...post,
                   user: {
                         ...post.user,
                         roleName: post.user.role?.name || 'User'
                   }
-            })
-
-            if (!post) {
-                  return NextResponse.json({ error: 'Post not found' }, { status: 404 })
             }
 
-            return NextResponse.json(post)
+            return NextResponse.json(postWithUserRole)
       } catch (error) {
             console.error('Error fetching post:', error)
             return NextResponse.json({ error: 'Failed to fetch post' }, { status: 500 })

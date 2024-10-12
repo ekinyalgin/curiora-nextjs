@@ -11,6 +11,7 @@ interface Comment {
       createdAt: string
       user: {
             name: string
+            image?: string
       }
       childComments?: Comment[]
       parentCommentId: number | null
@@ -21,6 +22,7 @@ export default function CommentSection({ comments: initialComments, postId }) {
       const [newComment, setNewComment] = useState('')
       const [comments, setComments] = useState<Comment[]>([])
       const [showSignInModal, setShowSignInModal] = useState(false)
+      const [activeTextarea, setActiveTextarea] = useState<string | null>(null)
 
       useEffect(() => {
             // Organize comments into a hierarchy
@@ -103,9 +105,78 @@ export default function CommentSection({ comments: initialComments, postId }) {
                               return comment
                         })
                   })
+                  setActiveTextarea(null)
             } catch (error) {
                   console.error('Error submitting reply:', error)
                   alert('Failed to submit reply. Please try again.')
+            }
+      }
+
+      const handleEdit = async (commentId: number, newText: string) => {
+            try {
+                  const response = await fetch(`/api/comments/${commentId}`, {
+                        method: 'PUT',
+                        headers: {
+                              'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ commentText: newText })
+                  })
+
+                  if (!response.ok) {
+                        throw new Error('Failed to edit comment')
+                  }
+
+                  const updatedComment = await response.json()
+
+                  setComments((prevComments) => {
+                        return prevComments.map((comment) => {
+                              if (comment.id === commentId) {
+                                    return { ...comment, ...updatedComment }
+                              }
+                              if (comment.childComments) {
+                                    return {
+                                          ...comment,
+                                          childComments: comment.childComments.map((childComment) =>
+                                                childComment.id === commentId
+                                                      ? { ...childComment, ...updatedComment }
+                                                      : childComment
+                                          )
+                                    }
+                              }
+                              return comment
+                        })
+                  })
+                  setActiveTextarea(null)
+            } catch (error) {
+                  console.error('Error editing comment:', error)
+                  alert('Failed to edit comment. Please try again.')
+            }
+      }
+
+      const handleDelete = async (commentId: number) => {
+            try {
+                  const response = await fetch(`/api/comments/${commentId}`, {
+                        method: 'DELETE'
+                  })
+
+                  if (!response.ok) {
+                        throw new Error('Failed to delete comment')
+                  }
+
+                  setComments((prevComments) => {
+                        return prevComments.filter((comment) => {
+                              if (comment.id === commentId) return false
+                              if (comment.childComments) {
+                                    comment.childComments = comment.childComments.filter(
+                                          (childComment) => childComment.id !== commentId
+                                    )
+                              }
+                              return true
+                        })
+                  })
+            } catch (error) {
+                  console.error('Error deleting comment:', error)
+                  alert('Failed to delete comment. Please try again.')
             }
       }
 
@@ -113,7 +184,16 @@ export default function CommentSection({ comments: initialComments, postId }) {
             <section className="mt-8">
                   <h2 className="text-2xl font-bold mb-4">Comments</h2>
                   {comments.map((comment) => (
-                        <CommentItem key={comment.id} comment={comment} postId={postId} onReply={handleReply} />
+                        <CommentItem
+                              key={comment.id}
+                              comment={comment}
+                              postId={postId}
+                              onReply={handleReply}
+                              onEdit={handleEdit}
+                              onDelete={handleDelete}
+                              activeTextarea={activeTextarea}
+                              setActiveTextarea={setActiveTextarea}
+                        />
                   ))}
                   {session ? (
                         <form onSubmit={handleSubmit} className="mt-4">

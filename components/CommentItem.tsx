@@ -3,6 +3,7 @@ import { RelativeDate } from './RelativeDate'
 import CommentActions from './CommentActions'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
+import VoteComponent from './VoteComponent'
 
 interface CommentItemProps {
       comment: any
@@ -31,6 +32,11 @@ export default function CommentItem({
 }: CommentItemProps) {
       const { data: session } = useSession()
       const [editText, setEditText] = useState(comment.commentText)
+      const [voteCount, setVoteCount] = useState({
+            upVotes: comment.voteCount?.upVotes || 0,
+            downVotes: comment.voteCount?.downVotes || 0
+      })
+      const [userVote, setUserVote] = useState(comment.userVote)
 
       const handleReply = async (text: string) => {
             const parentId = isChild ? topLevelParentId : comment.id
@@ -61,6 +67,39 @@ export default function CommentItem({
                         return 'border-red-500 border-2'
                   default:
                         return ''
+            }
+      }
+
+      const handleVote = async (voteType: 'upvote' | 'downvote' | null) => {
+            if (!session) {
+                  alert('You must be logged in to vote')
+                  return
+            }
+
+            try {
+                  const response = await fetch('/api/votes', {
+                        method: 'POST',
+                        headers: {
+                              'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                              itemId: comment.id,
+                              itemType: 'comment',
+                              voteType
+                        })
+                  })
+
+                  if (!response.ok) {
+                        throw new Error('Failed to vote')
+                  }
+
+                  const { voteCount: newVoteCount } = await response.json()
+
+                  setVoteCount(newVoteCount)
+                  setUserVote(voteType)
+            } catch (error) {
+                  console.error('Error voting:', error)
+                  alert('Failed to vote. Please try again.')
             }
       }
 
@@ -126,6 +165,14 @@ export default function CommentItem({
                                     />
                               </>
                         )}
+                        <VoteComponent
+                              itemId={comment.id}
+                              itemType="comment"
+                              initialUpVotes={voteCount.upVotes}
+                              initialDownVotes={voteCount.downVotes}
+                              userVote={userVote}
+                              onVote={handleVote}
+                        />
                   </div>
 
                   {comment.childComments && comment.childComments.length > 0 && (

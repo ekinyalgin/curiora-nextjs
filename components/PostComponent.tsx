@@ -1,10 +1,55 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
 import { RelativeDate } from './RelativeDate'
 import UserInfoComponent from './UserInfo'
+import VoteComponent from './VoteComponent'
+import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 
 export default function PostComponent({ post, showEditLink = false }) {
       if (!post) return null // Add this line to handle cases where post might be undefined
+
+      const { data: session } = useSession()
+      const [voteCount, setVoteCount] = useState({
+            upVotes: post.voteCount?.upVotes || 0,
+            downVotes: post.voteCount?.downVotes || 0
+      })
+      const [userVote, setUserVote] = useState(post.userVote)
+
+      const handleVote = async (voteType: 'upvote' | 'downvote' | null) => {
+            if (!session) {
+                  alert('You must be logged in to vote')
+                  return
+            }
+
+            try {
+                  const response = await fetch('/api/votes', {
+                        method: 'POST',
+                        headers: {
+                              'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                              itemId: post.id,
+                              itemType: 'post',
+                              voteType
+                        })
+                  })
+
+                  if (!response.ok) {
+                        throw new Error('Failed to vote')
+                  }
+
+                  const { voteCount: newVoteCount } = await response.json()
+
+                  setVoteCount(newVoteCount)
+                  setUserVote(voteType)
+            } catch (error) {
+                  console.error('Error voting:', error)
+                  alert('Failed to vote. Please try again.')
+            }
+      }
 
       return (
             <article className="space-y-6">
@@ -68,6 +113,15 @@ export default function PostComponent({ post, showEditLink = false }) {
                                     </Link>
                               ))}
                   </div>
+
+                  <VoteComponent
+                        itemId={post.id}
+                        itemType="post"
+                        initialUpVotes={voteCount.upVotes}
+                        initialDownVotes={voteCount.downVotes}
+                        userVote={userVote}
+                        onVote={handleVote}
+                  />
             </article>
       )
 }

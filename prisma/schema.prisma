@@ -53,6 +53,8 @@ model User {
   posts         Post[]
   comments      Comment[]
   media         Media[]
+  commentVotes CommentVote[]
+  postVotes    PostVote[]
 }
 
 model VerificationToken {
@@ -135,6 +137,8 @@ model Post {
   language        Language  @relation(fields: [languageId], references: [id])
   comments        Comment[]
   tags            Tag[]     // Add this line
+  votes      PostVote[]
+  voteCount  PostVoteCount?
 }
 
 enum Status {
@@ -157,6 +161,8 @@ model Comment {
   childComments    Comment[] @relation("CommentToComment")
   post             Post      @relation(fields: [postId], references: [id])
   user             User      @relation(fields: [userId], references: [id])
+  votes      CommentVote[]
+  voteCount  CommentVoteCount?
 }
 
 model Media {
@@ -169,4 +175,49 @@ model Media {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   posts Post[] // Bu satırı ekleyin
+}
+
+enum VoteType {
+  upvote
+  downvote
+}
+
+model CommentVote {
+  id        Int      @id @default(autoincrement())
+  commentId Int
+  userId    String
+  voteType  VoteType
+  comment   Comment  @relation(fields: [commentId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([commentId, userId])
+}
+
+model CommentVoteCount {
+  id         Int      @id @default(autoincrement())
+  commentId  Int      @unique
+  downVotes  Int      @default(0)
+  upVotes    Int      @default(0)
+  lastUpdated DateTime @updatedAt
+  comment    Comment  @relation(fields: [commentId], references: [id])
+}
+
+model PostVote {
+  id       Int      @id @default(autoincrement())
+  postId   Int
+  userId   String
+  voteType VoteType
+  post     Post     @relation(fields: [postId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+}
+
+model PostVoteCount {
+  id         Int      @id @default(autoincrement())
+  postId     Int      @unique
+  downVotes  Int      @default(0)
+  upVotes    Int      @default(0)
+  lastUpdated DateTime @updatedAt
+  post       Post     @relation(fields: [postId], references: [id])
 }

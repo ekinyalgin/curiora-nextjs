@@ -32,12 +32,26 @@ async function PostContent({ slug }: { slug: string }) {
                         language: true,
                         tags: true,
                         comments: {
-                              include: { user: true },
+                              include: {
+                                    user: true,
+                                    voteCount: true,
+                                    votes: session
+                                          ? {
+                                                  where: { userId: session.user.id }
+                                            }
+                                          : false
+                              },
                               ...(session?.user?.role === 'admin' || session?.user?.role === 1
                                     ? {}
                                     : { where: { status: 'approved' } }),
                               orderBy: { createdAt: 'desc' }
-                        }
+                        },
+                        voteCount: true,
+                        votes: session
+                              ? {
+                                      where: { userId: session.user.id }
+                                }
+                              : false
                   }
             })
       } catch (error) {
@@ -51,19 +65,24 @@ async function PostContent({ slug }: { slug: string }) {
 
       const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 1
 
-      // Transform the post to include roleName directly in the user object
+      // Transform the post to include roleName and userVote
       const transformedPost = {
             ...post,
             user: {
                   ...post.user,
                   roleName: post.user.role?.name || 'User'
-            }
+            },
+            userVote: post.votes && post.votes.length > 0 ? post.votes[0].voteType : null,
+            comments: post.comments.map((comment) => ({
+                  ...comment,
+                  userVote: comment.votes && comment.votes.length > 0 ? comment.votes[0].voteType : null
+            }))
       }
 
       return (
             <div className="container mx-auto px-4 py-8">
                   <PostComponent post={transformedPost} showEditLink={isAdmin} />
-                  <CommentSection comments={post.comments} postId={post.id} isAdmin={isAdmin} />
+                  <CommentSection comments={transformedPost.comments} postId={post.id} isAdmin={isAdmin} />
             </div>
       )
 }

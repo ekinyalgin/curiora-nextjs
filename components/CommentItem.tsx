@@ -5,6 +5,11 @@ import CommentActions from './CommentActions'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import VoteComponent from './VoteComponent'
+import { Flag } from 'lucide-react'
+import { ReportModal } from './ReportModal'
+import { ReportCategory } from '@prisma/client'
+import Notification from './Notification'
+import { Button } from './ui/button'
 
 interface CommentItemProps {
       comment: any
@@ -50,6 +55,8 @@ export default function CommentItem({
             downVotes: comment.voteCount?.downVotes || 0
       })
       const [userVote, setUserVote] = useState(comment.userVote)
+      const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+      const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
       const handleReply = async (text: string) => {
             const parentId = isChild ? topLevelParentId : comment.id
@@ -131,9 +138,35 @@ export default function CommentItem({
             }
       }
 
+      const handleReport = async (category: ReportCategory, description: string) => {
+            try {
+                  const response = await fetch('/api/reports', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ commentId: comment.id, category, description })
+                  })
+
+                  if (response.ok) {
+                        setNotification({
+                              message: 'Your report has been received and will be reviewed shortly.',
+                              type: 'success'
+                        })
+                  } else {
+                        throw new Error('Failed to submit report')
+                  }
+            } catch (error) {
+                  console.error('Error submitting report:', error)
+                  setNotification({
+                        message: 'Failed to submit report. Please try again.',
+                        type: 'error'
+                  })
+            }
+      }
+
       return (
             <div className={`mb-4 ${isChild ? 'ml-10' : ''}`}>
                   <div className={`bg-gray-100 p-4 rounded-lg ${getCommentStyle()}`}>
+                        <ReportModal type="comment" id={comment.id} />
                         <div className="flex items-center space-x-2 mb-2">
                               {comment.user.image ? (
                                     <Image
@@ -215,6 +248,23 @@ export default function CommentItem({
                                           onVote={handleVote}
                                           isDisabled={isArchived}
                                     />
+                                    <Button variant="ghost" onClick={() => setIsReportModalOpen(true)}>
+                                          <Flag className="h-4 w-4 mr-2" />
+                                          Report
+                                    </Button>
+                                    <ReportModal
+                                          isOpen={isReportModalOpen}
+                                          onClose={() => setIsReportModalOpen(false)}
+                                          onSubmit={handleReport}
+                                          type="comment"
+                                    />
+                                    {notification && (
+                                          <Notification
+                                                message={notification.message}
+                                                type={notification.type}
+                                                onClose={() => setNotification(null)}
+                                          />
+                                    )}
                               </>
                         )}
                   </div>

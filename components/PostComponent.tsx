@@ -7,8 +7,12 @@ import UserInfo from './UserInfo'
 import VoteComponent from './VoteComponent'
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { Archive, ArchiveRestore } from 'lucide-react'
+import { Archive, ArchiveRestore, Flag } from 'lucide-react'
 import CommentSection from './CommentSection'
+import { ReportModal } from './ReportModal'
+import { ReportCategory } from '@prisma/client'
+import { Button } from './ui/button'
+import Notification from './Notification'
 
 export default function PostComponent({ post, showEditLink = false, onArchive }) {
       if (!post) return null
@@ -20,10 +24,15 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
       })
       const [userVote, setUserVote] = useState(post.userVote)
       const [isArchived, setIsArchived] = useState(post.status === 'archived')
+      const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+      const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
       const handleVote = async (voteType: 'upvote' | 'downvote' | null) => {
             if (!session || isArchived) {
-                  alert('You must be logged in to vote or this post is archived')
+                  setNotification({
+                        message: 'You must be logged in to vote or this post is archived',
+                        type: 'error'
+                  })
                   return
             }
 
@@ -50,7 +59,10 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                   setUserVote(voteType)
             } catch (error) {
                   console.error('Error voting:', error)
-                  alert('Failed to vote. Please try again.')
+                  setNotification({
+                        message: 'Failed to vote. Please try again.',
+                        type: 'error'
+                  })
             }
       }
 
@@ -75,7 +87,35 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                   if (onArchive) onArchive(updatedPost)
             } catch (error) {
                   console.error('Error toggling archive status:', error)
-                  alert('Failed to toggle archive status. Please try again.')
+                  setNotification({
+                        message: 'Failed to toggle archive status. Please try again.',
+                        type: 'error'
+                  })
+            }
+      }
+
+      const handleReport = async (category: ReportCategory, description: string) => {
+            try {
+                  const response = await fetch('/api/reports', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ postId: post.id, category, description })
+                  })
+
+                  if (response.ok) {
+                        setNotification({
+                              message: 'Your report has been received and will be reviewed shortly.',
+                              type: 'success'
+                        })
+                  } else {
+                        throw new Error('Failed to submit report')
+                  }
+            } catch (error) {
+                  console.error('Error submitting report:', error)
+                  setNotification({
+                        message: 'Failed to submit report. Please try again.',
+                        type: 'error'
+                  })
             }
       }
 
@@ -92,7 +132,7 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                               />
                               <div className="flex items-center space-x-2 text-xs">
                                     <RelativeDate className="text-xs" date={post.createdAt} />
-
+                                    <ReportModal type="post" id={post.id} />
                                     {post.category && (
                                           <Link
                                                 href={`/categories/${post.category.slug}`}
@@ -135,6 +175,11 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                                     className="mb-4 rounded-lg"
                               />
                         )}
+
+                        <Button variant="ghost" onClick={() => setIsReportModalOpen(true)}>
+                              <Flag className="h-4 w-4 mr-2" />
+                              Report
+                        </Button>
 
                         <div
                               className="text-base text-gray-800 prose max-w-none"
@@ -186,6 +231,20 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                         isAdmin={showEditLink}
                         isArchived={isArchived}
                   />
+
+                  <ReportModal
+                        isOpen={isReportModalOpen}
+                        onClose={() => setIsReportModalOpen(false)}
+                        onSubmit={handleReport}
+                        type="post"
+                  />
+                  {notification && (
+                        <Notification
+                              message={notification.message}
+                              type={notification.type}
+                              onClose={() => setNotification(null)}
+                        />
+                  )}
             </>
       )
 }

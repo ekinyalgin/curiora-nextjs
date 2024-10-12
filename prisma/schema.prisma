@@ -55,6 +55,7 @@ model User {
   media         Media[]
   commentVotes CommentVote[]
   postVotes    PostVote[]
+  reports Report[] @relation("ReporterReports")
 }
 
 model VerificationToken {
@@ -140,6 +141,7 @@ model Post {
   votes      PostVote[]
   voteCount  PostVoteCount?
   commentCount Int @default(0)
+  reports Report[]
 }
 
 enum Status {
@@ -165,6 +167,7 @@ model Comment {
   votes            CommentVote[]
   voteCount        CommentVoteCount?
   isDeleted        Boolean   @default(false) 
+  reports Report[]
 }
 
 model Media {
@@ -222,4 +225,38 @@ model PostVoteCount {
   upVotes    Int      @default(0)
   lastUpdated DateTime @updatedAt
   post       Post     @relation(fields: [postId], references: [id])
+}
+
+enum ReportCategory {
+  SPAM
+  HATE_SPEECH
+  MISINFORMATION
+  INAPPROPRIATE_LANGUAGE
+  INAPPROPRIATE_CONTENT
+  OTHER
+}
+
+model Report {
+  id          String         @id @default(cuid())
+  category    ReportCategory
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  status      ReportStatus   @default(PENDING)
+  reporterId  String
+  reporter    User           @relation("ReporterReports", fields: [reporterId], references: [id])
+  postId      String?
+  post        Post?          @relation(fields: [postId], references: [id])
+  commentId   String?
+  comment     Comment?       @relation(fields: [commentId], references: [id])
+
+  @@index([postId])
+  @@index([commentId])
+  @@index([reporterId])
+}
+
+enum ReportStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

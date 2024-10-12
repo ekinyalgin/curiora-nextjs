@@ -10,6 +10,7 @@ interface VoteComponentProps {
       initialDownVotes: number
       userVote?: 'upvote' | 'downvote' | null
       onVote: (voteType: 'upvote' | 'downvote' | null) => Promise<void>
+      isDisabled?: boolean
 }
 
 export default function VoteComponent({
@@ -18,7 +19,8 @@ export default function VoteComponent({
       initialUpVotes,
       initialDownVotes,
       userVote: initialUserVote,
-      onVote
+      onVote,
+      isDisabled = false
 }: VoteComponentProps) {
       const [upVotes, setUpVotes] = useState(initialUpVotes)
       const [downVotes, setDownVotes] = useState(initialDownVotes)
@@ -67,10 +69,11 @@ export default function VoteComponent({
       }
 
       return (
-            <div className="flex items-center space-x-2">
+            <div className={`flex items-center space-x-2 ${isDisabled ? 'opacity-50' : ''}`}>
                   <button
                         onClick={() => handleVote('upvote')}
                         className={`focus:outline-none ${userVote === 'upvote' ? 'text-green-500' : 'text-gray-500'}`}
+                        disabled={isDisabled}
                   >
                         <FaArrowUp />
                   </button>
@@ -78,6 +81,7 @@ export default function VoteComponent({
                   <button
                         onClick={() => handleVote('downvote')}
                         className={`focus:outline-none ${userVote === 'downvote' ? 'text-red-500' : 'text-gray-500'}`}
+                        disabled={isDisabled}
                   >
                         <FaArrowDown />
                   </button>

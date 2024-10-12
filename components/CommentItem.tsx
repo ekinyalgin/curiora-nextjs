@@ -22,6 +22,7 @@ interface CommentItemProps {
       setActiveTextarea: (id: string | null) => void
       updateComment: (commentId: number, updatedComment: any) => void
       isAdmin: boolean
+      isArchived: boolean
 }
 
 export default function CommentItem({
@@ -39,7 +40,8 @@ export default function CommentItem({
       activeTextarea,
       setActiveTextarea,
       updateComment,
-      isAdmin
+      isAdmin,
+      isArchived
 }: CommentItemProps) {
       const { data: session } = useSession()
       const [editText, setEditText] = useState(comment.commentText)
@@ -202,17 +204,19 @@ export default function CommentItem({
                                           isActiveTextarea={activeTextarea === `reply-${comment.id}`}
                                           status={comment.status}
                                           isDeleted={comment.isDeleted}
+                                          isArchived={isArchived}
+                                    />
+                                    <VoteComponent
+                                          itemId={comment.id}
+                                          itemType="comment"
+                                          initialUpVotes={voteCount.upVotes}
+                                          initialDownVotes={voteCount.downVotes}
+                                          userVote={userVote}
+                                          onVote={handleVote}
+                                          isDisabled={isArchived}
                                     />
                               </>
                         )}
-                        <VoteComponent
-                              itemId={comment.id}
-                              itemType="comment"
-                              initialUpVotes={voteCount.upVotes}
-                              initialDownVotes={voteCount.downVotes}
-                              userVote={userVote}
-                              onVote={handleVote}
-                        />
                   </div>
 
                   {comment.childComments && comment.childComments.length > 0 && (
@@ -237,6 +241,7 @@ export default function CommentItem({
                                                 setActiveTextarea={setActiveTextarea}
                                                 updateComment={updateComment}
                                                 isAdmin={isAdmin}
+                                                isArchived={isArchived}
                                           />
                                     ))}
                         </div>

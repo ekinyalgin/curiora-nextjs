@@ -24,9 +24,15 @@ interface CommentSectionProps {
       comments: Comment[]
       postId: number
       isAdmin: boolean
+      isArchived: boolean
 }
 
-export default function CommentSection({ comments: initialComments, postId, isAdmin }: CommentSectionProps) {
+export default function CommentSection({
+      comments: initialComments,
+      postId,
+      isAdmin,
+      isArchived
+}: CommentSectionProps) {
       const { data: session } = useSession()
       const [newComment, setNewComment] = useState('')
       const [comments, setComments] = useState<Comment[]>([])
@@ -346,7 +352,7 @@ export default function CommentSection({ comments: initialComments, postId, isAd
       return (
             <section className="mt-8">
                   <h2 className="text-2xl font-bold mb-4">Comments</h2>
-                  {session ? (
+                  {!isArchived && session ? (
                         <form onSubmit={handleSubmit} className="mb-6">
                               <textarea
                                     value={newComment}
@@ -359,6 +365,8 @@ export default function CommentSection({ comments: initialComments, postId, isAd
                                     Submit Comment
                               </button>
                         </form>
+                  ) : isArchived ? (
+                        <p className="mb-6">This post is archived. New comments cannot be posted.</p>
                   ) : (
                         <p className="mb-6">Please log in to leave a comment.</p>
                   )}
@@ -382,6 +390,7 @@ export default function CommentSection({ comments: initialComments, postId, isAd
                               activeTextarea={activeTextarea}
                               setActiveTextarea={setActiveTextarea}
                               isAdmin={isAdmin}
+                              isArchived={isArchived}
                               updateComment={(commentId, updatedComment) => {
                                     setComments((prevComments) => updateCommentInList(prevComments, updatedComment))
                                     setFilteredComments((prevComments) =>

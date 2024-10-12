@@ -64,6 +64,7 @@ async function PostContent({ slug }: { slug: string }) {
       }
 
       const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 1
+      const isArchived = post.status === 'archived'
 
       // Transform the post to include roleName and userVote
       const transformedPost = {
@@ -82,7 +83,12 @@ async function PostContent({ slug }: { slug: string }) {
       return (
             <div className="container mx-auto px-4 py-8">
                   <PostComponent post={transformedPost} showEditLink={isAdmin} />
-                  <CommentSection comments={transformedPost.comments} postId={post.id} isAdmin={isAdmin} />
+                  <CommentSection
+                        comments={transformedPost.comments}
+                        postId={post.id}
+                        isAdmin={isAdmin}
+                        isArchived={isArchived}
+                  />
             </div>
       )
 }

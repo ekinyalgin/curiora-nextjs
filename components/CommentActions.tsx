@@ -18,6 +18,7 @@ interface CommentActionsProps {
       isActiveTextarea: boolean
       status: string
       isDeleted: boolean
+      isArchived: boolean
 }
 
 export default function CommentActions({
@@ -34,7 +35,8 @@ export default function CommentActions({
       activeTextareaId,
       isActiveTextarea,
       status,
-      isDeleted
+      isDeleted,
+      isArchived
 }: CommentActionsProps) {
       const { data: session } = useSession()
       const [isSoftDeleteConfirm, setIsSoftDeleteConfirm] = useState(false)
@@ -86,7 +88,7 @@ export default function CommentActions({
 
       return (
             <div>
-                  {!isDeleted && (
+                  {!isDeleted && !isArchived && (
                         <button onClick={handleReply} className="text-blue-500 text-sm mt-2 mr-2">
                               Reply
                         </button>

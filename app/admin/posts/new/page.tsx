@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LanguageSelect } from '@/components/ui/language-select';
 import { FeaturedImageSelect } from '@/components/ui/featured-image-select';
 import { TagInput } from '@/components/ui/tag-input';
-import slugify from 'slugify';
+import { SlugInput, createSlug } from '@/components/ui/slug-input';
 
 export default function NewPost() {
       const [post, setPost] = useState({
@@ -47,17 +47,54 @@ export default function NewPost() {
             setCategories(data);
       }
 
+      const checkSlugUniqueness = async (slug: string): Promise<boolean> => {
+            const response = await fetch(`/api/check-slug?slug=${encodeURIComponent(slug)}&type=post`);
+            if (!response.ok) {
+                  throw new Error('Failed to check slug uniqueness');
+            }
+            const data = await response.json();
+            return data.isUnique;
+      };
+
+      async function generateUniqueSlug(
+            baseSlug: string,
+            checkUniqueness: (slug: string) => Promise<boolean>
+      ): Promise<string> {
+            let slug = baseSlug;
+            let counter = 1;
+            let isUnique = await checkUniqueness(slug);
+
+            while (!isUnique) {
+                  slug = `${baseSlug}-${counter}`;
+                  isUnique = await checkUniqueness(slug);
+                  counter++;
+            }
+
+            return slug;
+      }
+
       const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault();
             try {
+                  let postToSubmit = { ...post };
+                  if (!postToSubmit.slug) {
+                        postToSubmit.slug = createSlug(postToSubmit.title);
+                  }
+
+                  // Slug benzersizliğini kontrol et
+                  const isUnique = await checkSlugUniqueness(postToSubmit.slug);
+                  if (!isUnique) {
+                        postToSubmit.slug = await generateUniqueSlug(postToSubmit.slug, checkSlugUniqueness);
+                  }
+
                   const response = await fetch('/api/posts', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                              ...post,
-                              user: { id: post.userId },
-                              category: { id: post.categoryId },
-                              language: { id: post.languageId },
+                              ...postToSubmit,
+                              user: { id: postToSubmit.userId },
+                              category: { id: postToSubmit.categoryId },
+                              language: { id: postToSubmit.languageId },
                         }),
                   });
 
@@ -72,12 +109,8 @@ export default function NewPost() {
             }
       };
 
-      const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            const { name, value } = e.target;
+      const handleInputChange = (name: string, value: string) => {
             setPost((prev) => ({ ...prev, [name]: value }));
-            if (name === 'title' && !post.slug) {
-                  setPost((prev) => ({ ...prev, slug: slugify(value, { lower: true, strict: true }) }));
-            }
       };
 
       const handleFeaturedImageSelect = (imageId: number | null) => {
@@ -98,16 +131,18 @@ export default function NewPost() {
                         name="title"
                         label="Title"
                         value={post.title}
-                        onChange={handleInputChange}
+                        onChange={(e) => handleInputChange('title', e.target.value)}
                         placeholder="Enter post title"
                         required
                   />
-                  <Input
+                  <SlugInput
                         name="slug"
                         label="Slug"
                         value={post.slug}
                         onChange={handleInputChange}
-                        placeholder="Enter slug or leave empty to generate from title"
+                        sourceValue={post.title}
+                        placeholder="Enter slug or leave empty to generate automatically"
+                        autoGenerate={false}
                   />
                   <Textarea
                         name="content"

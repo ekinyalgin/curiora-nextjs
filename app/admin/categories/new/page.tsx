@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { AdminFormLayout } from '@/components/ui/admin-form-layout';
 import { LanguageSelect } from '@/components/ui/language-select';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SlugInput } from '@/components/ui/slug-input';
+import { SlugInput, createSlug } from '@/components/ui/slug-input';
 
 export default function NewCategory() {
       const [category, setCategory] = useState({
@@ -31,13 +31,50 @@ export default function NewCategory() {
             setParentCategories(data);
       }
 
+      const checkSlugUniqueness = async (slug: string): Promise<boolean> => {
+            const response = await fetch(`/api/check-slug?slug=${encodeURIComponent(slug)}&type=category`);
+            if (!response.ok) {
+                  throw new Error('Failed to check slug uniqueness');
+            }
+            const data = await response.json();
+            return data.isUnique;
+      };
+
+      async function generateUniqueSlug(
+            baseSlug: string,
+            checkUniqueness: (slug: string) => Promise<boolean>
+      ): Promise<string> {
+            let slug = baseSlug;
+            let counter = 1;
+            let isUnique = await checkUniqueness(slug);
+
+            while (!isUnique) {
+                  slug = `${baseSlug}-${counter}`;
+                  isUnique = await checkUniqueness(slug);
+                  counter++;
+            }
+
+            return slug;
+      }
+
       const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault();
             try {
+                  let categoryToSubmit = { ...category };
+                  if (!categoryToSubmit.slug) {
+                        categoryToSubmit.slug = createSlug(categoryToSubmit.name);
+                  }
+
+                  // Slug benzersizliğini kontrol et
+                  const isUnique = await checkSlugUniqueness(categoryToSubmit.slug);
+                  if (!isUnique) {
+                        categoryToSubmit.slug = await generateUniqueSlug(categoryToSubmit.slug, checkSlugUniqueness);
+                  }
+
                   const response = await fetch('/api/categories', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(category),
+                        body: JSON.stringify(categoryToSubmit),
                   });
 
                   if (!response.ok) {
@@ -76,6 +113,8 @@ export default function NewCategory() {
                         value={category.slug}
                         onChange={handleInputChange}
                         sourceValue={category.name}
+                        placeholder="Enter slug or leave empty to generate automatically"
+                        autoGenerate={false}
                   />
                   <Textarea
                         name="description"

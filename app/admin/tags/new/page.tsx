@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AdminFormLayout } from '@/components/ui/admin-form-layout';
 import { LanguageSelect } from '@/components/ui/language-select';
-import { SlugInput, createSlug, generateUniqueSlug } from '@/components/ui/slug-input';
+import { SlugInput, createSlug } from '@/components/ui/slug-input';
 
 export default function NewTag() {
       const [tag, setTag] = useState({ name: '', slug: '', description: '', language_id: '' });
@@ -14,11 +14,17 @@ export default function NewTag() {
       const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault();
             try {
-                  const tagToSubmit = { ...tag };
+                  let tagToSubmit = { ...tag };
                   if (!tagToSubmit.slug) {
                         tagToSubmit.slug = createSlug(tagToSubmit.name);
                   }
-                  tagToSubmit.slug = await generateUniqueSlug(tagToSubmit.slug, checkSlugUniqueness);
+
+                  // Slug benzersizliğini kontrol et
+                  const isUnique = await checkSlugUniqueness(tagToSubmit.slug);
+                  if (!isUnique) {
+                        tagToSubmit.slug = await generateUniqueSlug(tagToSubmit.slug, checkSlugUniqueness);
+                  }
+
                   const response = await fetch('/api/tags', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -50,6 +56,23 @@ export default function NewTag() {
             return data.isUnique;
       };
 
+      async function generateUniqueSlug(
+            baseSlug: string,
+            checkUniqueness: (slug: string) => Promise<boolean>
+      ): Promise<string> {
+            let slug = baseSlug;
+            let counter = 1;
+            let isUnique = await checkUniqueness(slug);
+
+            while (!isUnique) {
+                  slug = `${baseSlug}-${counter}`;
+                  isUnique = await checkUniqueness(slug);
+                  counter++;
+            }
+
+            return slug;
+      }
+
       return (
             <AdminFormLayout title="Add New Tag" backLink="/admin/tags" onSubmit={handleSubmit} submitText="Add Tag">
                   <Input
@@ -68,7 +91,6 @@ export default function NewTag() {
                         sourceValue={tag.name}
                         placeholder="Enter slug or leave empty to generate automatically"
                         autoGenerate={false}
-                        checkSlugUniqueness={checkSlugUniqueness}
                   />
                   <Textarea
                         name="description"

@@ -6,7 +6,7 @@ import { AdminFormLayout } from '@/components/ui/admin-form-layout';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { LanguageSelect } from '@/components/ui/language-select';
-import { SlugInput, createSlug, generateUniqueSlug } from '@/components/ui/slug-input';
+import { SlugInput, createSlug } from '@/components/ui/slug-input';
 
 export default function TagForm({ params }: { params: { id: string } }) {
       const [tag, setTag] = useState({ name: '', slug: '', description: '', language_id: '' });
@@ -40,13 +40,30 @@ export default function TagForm({ params }: { params: { id: string } }) {
             }
       }
 
-      async function checkSlugUniqueness(slug: string): Promise<boolean> {
+      const checkSlugUniqueness = async (slug: string): Promise<boolean> => {
             const response = await fetch(`/api/check-slug?slug=${encodeURIComponent(slug)}&type=tag&id=${id}`);
             if (!response.ok) {
                   throw new Error('Failed to check slug uniqueness');
             }
             const data = await response.json();
             return data.isUnique;
+      };
+
+      async function generateUniqueSlug(
+            baseSlug: string,
+            checkUniqueness: (slug: string) => Promise<boolean>
+      ): Promise<string> {
+            let slug = baseSlug;
+            let counter = 1;
+            let isUnique = await checkUniqueness(slug);
+
+            while (!isUnique) {
+                  slug = `${baseSlug}-${counter}`;
+                  isUnique = await checkUniqueness(slug);
+                  counter++;
+            }
+
+            return slug;
       }
 
       async function handleSubmit(e: React.FormEvent) {
@@ -56,7 +73,13 @@ export default function TagForm({ params }: { params: { id: string } }) {
                   if (!tagToSubmit.slug) {
                         tagToSubmit.slug = createSlug(tagToSubmit.name);
                   }
-                  tagToSubmit.slug = await generateUniqueSlug(tagToSubmit.slug, checkSlugUniqueness);
+
+                  // Slug benzersizliğini kontrol et
+                  const isUnique = await checkSlugUniqueness(tagToSubmit.slug);
+                  if (!isUnique) {
+                        tagToSubmit.slug = await generateUniqueSlug(tagToSubmit.slug, checkSlugUniqueness);
+                  }
+
                   const method = id ? 'PUT' : 'POST';
                   const url = id ? `/api/tags/${id}` : '/api/tags';
                   const response = await fetch(url, {
@@ -97,7 +120,7 @@ export default function TagForm({ params }: { params: { id: string } }) {
                         onChange={handleInputChange}
                         sourceValue={tag.name}
                         placeholder="Enter slug or leave empty to generate automatically"
-                        checkSlugUniqueness={checkSlugUniqueness}
+                        autoGenerate={false}
                   />
                   <Textarea
                         name="description"

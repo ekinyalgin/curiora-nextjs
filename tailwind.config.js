@@ -51,8 +51,20 @@ module.exports = {
     			}
     		},
     		fontFamily: {
-    			sans: ['Inter', 'sans-serif']
-    		},
+				sans: [
+					'-apple-system',
+					'BlinkMacSystemFont',
+					'Segoe UI',
+					'Roboto',
+					'Helvetica Neue',
+					'Arial',
+					'Apple Color Emoji',
+					'Segoe UI Emoji',
+					'Segoe UI Symbol',
+					'sans-serif'
+				]
+			},
+			
     		borderRadius: {
     			lg: 'var(--radius)',
     			md: 'calc(var(--radius) - 2px)',

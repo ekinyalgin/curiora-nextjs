@@ -1,32 +1,71 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 export async function GET(request: Request) {
-      const { searchParams } = new URL(request.url);
-      const search = searchParams.get('search');
+      const { searchParams } = new URL(request.url)
+      const postId = searchParams.get('postId')
 
-      let comments;
-      if (search) {
-            comments = await prisma.comment.findMany({
-                  where: {
-                        OR: [{ commentText: { contains: search } }, { user: { name: { contains: search } } }],
-                  },
-                  include: { user: true, post: true },
-            });
-      } else {
-            comments = await prisma.comment.findMany({
-                  include: { user: true, post: true },
-            });
+      if (!postId) {
+            return NextResponse.json({ error: 'Post ID is required' }, { status: 400 })
       }
 
-      return NextResponse.json(comments);
+      const comments = await prisma.comment.findMany({
+            where: {
+                  postId: parseInt(postId),
+                  parentCommentId: null // Only fetch top-level comments
+            },
+            include: {
+                  user: true,
+                  childComments: {
+                        include: {
+                              user: true,
+                              childComments: {
+                                    include: {
+                                          user: true
+                                    }
+                              }
+                        }
+                  }
+            },
+            orderBy: { createdAt: 'desc' }
+      })
+
+      return NextResponse.json(comments)
 }
 
 export async function POST(request: Request) {
-      const body = await request.json();
-      const comment = await prisma.comment.create({
-            data: body,
-            include: { user: true, post: true },
-      });
-      return NextResponse.json(comment, { status: 201 });
+      const session = await getServerSession(authOptions)
+
+      if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
+      const body = await request.json()
+      const { postId, userId, commentText, status, parentCommentId } = body
+
+      if (!postId || !userId || !commentText) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      }
+
+      try {
+            const comment = await prisma.comment.create({
+                  data: {
+                        postId: parseInt(postId),
+                        userId,
+                        commentText,
+                        status,
+                        parentCommentId: parentCommentId ? parseInt(parentCommentId) : null
+                  },
+                  include: {
+                        user: true
+                  }
+            })
+
+            return NextResponse.json(comment, { status: 201 })
+      } catch (error) {
+            console.error('Error creating comment:', error)
+            return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 })
+      }
 }

@@ -1,35 +1,44 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import SignInModal from './auth/SignInModal'
-import { FaEdit, FaTrash, FaCheck, FaTimes, FaArchive, FaClock } from 'react-icons/fa'
+import { FaEdit, FaTrash, FaCheck, FaTimes, FaArchive, FaClock, FaSkull, FaUndoAlt } from 'react-icons/fa'
 
 interface CommentActionsProps {
       onReply: (text: string) => Promise<void>
       onEdit: () => void
-      onDelete: () => Promise<void>
+      onSoftDelete: () => Promise<void>
+      onHardDelete: () => Promise<void>
+      onRestore: () => Promise<void>
       onStatusChange: (newStatus: string) => Promise<void>
       commentText: string
       canEditDelete: boolean
+      isAdmin: boolean
       setActiveTextarea: (id: string | null) => void
       activeTextareaId: string
       isActiveTextarea: boolean
       status: string
+      isDeleted: boolean
 }
 
 export default function CommentActions({
       onReply,
       onEdit,
-      onDelete,
+      onSoftDelete,
+      onHardDelete,
+      onRestore,
       onStatusChange,
       commentText,
       canEditDelete,
+      isAdmin,
       setActiveTextarea,
       activeTextareaId,
       isActiveTextarea,
-      status
+      status,
+      isDeleted
 }: CommentActionsProps) {
       const { data: session } = useSession()
-      const [isDeletingConfirm, setIsDeletingConfirm] = useState(false)
+      const [isSoftDeleteConfirm, setIsSoftDeleteConfirm] = useState(false)
+      const [isHardDeleteConfirm, setIsHardDeleteConfirm] = useState(false)
       const [replyText, setReplyText] = useState('')
       const [showSignInModal, setShowSignInModal] = useState(false)
 
@@ -49,36 +58,76 @@ export default function CommentActions({
             }
       }
 
-      const handleDelete = () => {
-            setIsDeletingConfirm(true)
+      const handleSoftDelete = () => {
+            setIsSoftDeleteConfirm(true)
       }
 
-      const confirmDelete = async () => {
-            await onDelete()
-            setIsDeletingConfirm(false)
+      const confirmSoftDelete = async () => {
+            await onSoftDelete()
+            setIsSoftDeleteConfirm(false)
+      }
+
+      const handleHardDelete = () => {
+            setIsHardDeleteConfirm(true)
+      }
+
+      const confirmHardDelete = async () => {
+            await onHardDelete()
+            setIsHardDeleteConfirm(false)
       }
 
       return (
             <div>
-                  <button onClick={handleReply} className="text-blue-500 text-sm mt-2 mr-2">
-                        Reply
-                  </button>
-                  {canEditDelete && (
+                  {!isDeleted && (
+                        <button onClick={handleReply} className="text-blue-500 text-sm mt-2 mr-2">
+                              Reply
+                        </button>
+                  )}
+                  {canEditDelete && !isDeleted && (
                         <>
                               <button onClick={onEdit} className="text-green-500 text-sm mt-2 mr-2">
                                     <FaEdit />
                               </button>
-                              <button onClick={handleDelete} className="text-red-500 text-sm mt-2 mr-2">
-                                    {isDeletingConfirm ? <FaCheck onClick={confirmDelete} /> : <FaTrash />}
+                              <button onClick={handleSoftDelete} className="text-red-500 text-sm mt-2 mr-2">
+                                    {isSoftDeleteConfirm ? <FaCheck onClick={confirmSoftDelete} /> : <FaTrash />}
                               </button>
-                              {isDeletingConfirm && (
-                                    <button
-                                          onClick={() => setIsDeletingConfirm(false)}
-                                          className="text-gray-500 text-sm mt-2 mr-2"
-                                    >
-                                          <FaTimes />
+                        </>
+                  )}
+                  {isAdmin && (
+                        <>
+                              {isDeleted ? (
+                                    <>
+                                          <button onClick={onRestore} className="text-blue-500 text-sm mt-2 mr-2">
+                                                <FaUndoAlt />
+                                          </button>
+                                          <button onClick={handleHardDelete} className="text-red-700 text-sm mt-2 mr-2">
+                                                {isHardDeleteConfirm ? (
+                                                      <FaCheck onClick={confirmHardDelete} />
+                                                ) : (
+                                                      <FaSkull />
+                                                )}
+                                          </button>
+                                    </>
+                              ) : (
+                                    <button onClick={handleHardDelete} className="text-red-700 text-sm mt-2 mr-2">
+                                          {isHardDeleteConfirm ? <FaCheck onClick={confirmHardDelete} /> : <FaSkull />}
                                     </button>
                               )}
+                        </>
+                  )}
+                  {(isSoftDeleteConfirm || isHardDeleteConfirm) && (
+                        <button
+                              onClick={() => {
+                                    setIsSoftDeleteConfirm(false)
+                                    setIsHardDeleteConfirm(false)
+                              }}
+                              className="text-gray-500 text-sm mt-2 mr-2"
+                        >
+                              <FaTimes />
+                        </button>
+                  )}
+                  {isAdmin && !isDeleted && (
+                        <>
                               {status === 'pending' && (
                                     <>
                                           <button

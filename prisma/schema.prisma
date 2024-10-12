@@ -161,8 +161,9 @@ model Comment {
   childComments    Comment[] @relation("CommentToComment")
   post             Post      @relation(fields: [postId], references: [id])
   user             User      @relation(fields: [userId], references: [id])
-  votes      CommentVote[]
-  voteCount  CommentVoteCount?
+  votes            CommentVote[]
+  voteCount        CommentVoteCount?
+  isDeleted        Boolean   @default(false) 
 }
 
 model Media {

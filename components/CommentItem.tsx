@@ -12,10 +12,15 @@ interface CommentItemProps {
       onEdit: (commentId: number, text: string) => Promise<void>
       onDelete: (commentId: number) => Promise<void>
       onStatusChange: (commentId: number, newStatus: string) => Promise<void>
+      onSoftDelete: (commentId: number) => Promise<void>
+      onHardDelete: (commentId: number) => Promise<void>
+      onRestore: (commentId: number) => Promise<void>
       isChild?: boolean
       topLevelParentId?: number
       activeTextarea: string | null
       setActiveTextarea: (id: string | null) => void
+      updateComment: (commentId: number, updatedComment: any) => void
+      isAdmin: boolean
 }
 
 export default function CommentItem({
@@ -25,10 +30,15 @@ export default function CommentItem({
       onEdit,
       onDelete,
       onStatusChange,
+      onSoftDelete,
+      onHardDelete,
+      onRestore,
       isChild = false,
       topLevelParentId,
       activeTextarea,
-      setActiveTextarea
+      setActiveTextarea,
+      updateComment,
+      isAdmin
 }: CommentItemProps) {
       const { data: session } = useSession()
       const [editText, setEditText] = useState(comment.commentText)
@@ -46,6 +56,7 @@ export default function CommentItem({
 
       const handleEdit = async (text: string) => {
             await onEdit(comment.id, text)
+            updateComment(comment.id, { ...comment, commentText: text })
             setActiveTextarea(null)
       }
 
@@ -55,9 +66,23 @@ export default function CommentItem({
 
       const handleStatusChange = async (newStatus: string) => {
             await onStatusChange(comment.id, newStatus)
+            updateComment(comment.id, { ...comment, status: newStatus })
       }
 
-      const canEditDelete = session && (session.user.id === comment.userId || session.user.role === 'admin')
+      const handleSoftDelete = async () => {
+            await onSoftDelete(comment.id)
+      }
+
+      const handleHardDelete = async () => {
+            await onHardDelete(comment.id)
+      }
+
+      const handleRestore = async () => {
+            await onRestore(comment.id)
+            updateComment(comment.id, { ...comment, isDeleted: false })
+      }
+
+      const canEditDelete = isAdmin || (session && session.user.id === comment.userId)
 
       const getCommentStyle = () => {
             switch (comment.status) {
@@ -150,18 +175,34 @@ export default function CommentItem({
                               </div>
                         ) : (
                               <>
-                                    <p>{comment.commentText}</p>
+                                    {comment.isDeleted ? (
+                                          <div>
+                                                <p className="italic text-gray-500">This comment has been deleted.</p>
+                                                {isAdmin && (
+                                                      <p className="text-sm text-gray-400 mt-1">
+                                                            Original comment: {comment.commentText}
+                                                      </p>
+                                                )}
+                                          </div>
+                                    ) : (
+                                          <p>{comment.commentText}</p>
+                                    )}
                                     <CommentActions
                                           onReply={handleReply}
                                           onEdit={() => setActiveTextarea(`edit-${comment.id}`)}
                                           onDelete={handleDelete}
                                           onStatusChange={handleStatusChange}
+                                          onSoftDelete={handleSoftDelete}
+                                          onHardDelete={handleHardDelete}
+                                          onRestore={handleRestore}
                                           commentText={comment.commentText}
                                           canEditDelete={canEditDelete}
+                                          isAdmin={isAdmin}
                                           setActiveTextarea={setActiveTextarea}
                                           activeTextareaId={`reply-${comment.id}`}
                                           isActiveTextarea={activeTextarea === `reply-${comment.id}`}
                                           status={comment.status}
+                                          isDeleted={comment.isDeleted}
                                     />
                               </>
                         )}
@@ -188,10 +229,15 @@ export default function CommentItem({
                                                 onEdit={onEdit}
                                                 onDelete={onDelete}
                                                 onStatusChange={onStatusChange}
+                                                onSoftDelete={onSoftDelete}
+                                                onHardDelete={onHardDelete}
+                                                onRestore={onRestore}
                                                 isChild={true}
                                                 topLevelParentId={isChild ? topLevelParentId : comment.id}
                                                 activeTextarea={activeTextarea}
                                                 setActiveTextarea={setActiveTextarea}
+                                                updateComment={updateComment}
+                                                isAdmin={isAdmin}
                                           />
                                     ))}
                         </div>

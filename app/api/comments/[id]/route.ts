@@ -39,29 +39,50 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
       const id = parseInt(params.id)
       const body = await request.json()
-      const { status } = body
-
-      if (!['pending', 'approved', 'archived'].includes(status)) {
-            return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
-      }
+      const { status, isDeleted } = body
 
       try {
             const updatedComment = await prisma.comment.update({
                   where: { id },
-                  data: { status: status as 'pending' | 'approved' | 'archived' },
+                  data: {
+                        ...(status && { status: status as 'pending' | 'approved' | 'archived' }),
+                        ...(isDeleted !== undefined && { isDeleted })
+                  },
                   include: { user: true }
             })
 
             return NextResponse.json(updatedComment)
       } catch (error) {
-            console.error('Error updating comment status:', error)
-            return NextResponse.json({ error: 'Failed to update comment status' }, { status: 500 })
+            console.error('Error updating comment:', error)
+            return NextResponse.json({ error: 'Failed to update comment' }, { status: 500 })
       }
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+      const session = await getServerSession(authOptions)
+
+      if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
       const id = parseInt(params.id)
 
-      await prisma.comment.delete({ where: { id } })
-      return NextResponse.json({ message: 'Comment deleted successfully' })
+      try {
+            // Önce alt yorumları silelim
+            await prisma.comment.deleteMany({
+                  where: {
+                        parentCommentId: id
+                  }
+            })
+
+            // Şimdi ana yorumu silelim
+            await prisma.comment.delete({
+                  where: { id }
+            })
+
+            return NextResponse.json({ message: 'Comment and its replies deleted successfully' })
+      } catch (error) {
+            console.error('Error deleting comment:', error)
+            return NextResponse.json({ error: 'Failed to delete comment' }, { status: 500 })
+      }
 }

@@ -5,8 +5,9 @@ import { AdminListLayout } from '@/components/ui/admin-list-layout'
 import { useSession } from 'next-auth/react'
 import { ReportStatus, ReportCategory } from '@prisma/client'
 import { ColumnDef } from '@tanstack/react-table'
-import { Check, X, Clock, ExternalLink } from 'lucide-react'
+import { Check, X, Clock, ExternalLink, Archive, Trash, Skull, ToggleLeft, ToggleRight } from 'lucide-react'
 import Link from 'next/link'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface Report {
       id: string
@@ -25,28 +26,29 @@ interface Report {
             id: string
             title: string
             slug: string
+            status: 'published' | 'draft'
       }
       comment?: {
             id: string
             commentText: string
+            status: 'pending' | 'approved' | 'archived'
       }
 }
 
 export default function ReportsPanel() {
       const { data: session, status } = useSession()
       const [reports, setReports] = useState<Report[]>([])
-      const [filter, setFilter] = useState<'all' | 'post' | 'comment'>('all')
-      const [categoryFilter, setCategoryFilter] = useState<ReportCategory | 'all'>('all')
+      const [activeTab, setActiveTab] = useState<'post' | 'comment'>('post')
 
       useEffect(() => {
             if (status !== 'loading') {
                   fetchReports()
             }
-      }, [status, filter, categoryFilter])
+      }, [status, activeTab])
 
       const fetchReports = async () => {
             try {
-                  const response = await fetch(`/api/reports?filter=${filter}&category=${categoryFilter}`)
+                  const response = await fetch(`/api/reports?filter=${activeTab}`)
                   if (!response.ok) {
                         throw new Error('Failed to fetch reports')
                   }
@@ -57,52 +59,59 @@ export default function ReportsPanel() {
             }
       }
 
-      const handleDecision = async (reportId: string, decision: ReportStatus) => {
+      const handleCommentAction = async (
+            commentId: string,
+            action: 'approve' | 'pending' | 'archive' | 'softDelete' | 'hardDelete'
+      ) => {
             try {
-                  const response = await fetch(`/api/reports/${reportId}`, {
+                  const response = await fetch(`/api/comments/${commentId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: decision })
+                        body: JSON.stringify({ action })
                   })
                   if (!response.ok) {
-                        throw new Error('Failed to update report status')
+                        throw new Error('Failed to update comment status')
                   }
                   await fetchReports()
             } catch (error) {
-                  console.error('Error updating report status:', error)
+                  console.error('Error updating comment status:', error)
             }
       }
 
-      const columns: ColumnDef<Report>[] = [
+      const handlePostAction = async (postId: string, action: 'publish' | 'draft') => {
+            try {
+                  const response = await fetch(`/api/posts/${postId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: action })
+                  })
+                  if (!response.ok) {
+                        throw new Error('Failed to update post status')
+                  }
+                  await fetchReports()
+            } catch (error) {
+                  console.error('Error updating post status:', error)
+            }
+      }
+
+      const postColumns: ColumnDef<Report>[] = [
             {
                   accessorKey: 'reporter',
                   header: 'Reporter',
                   cell: ({ row }) => <span>{row.original.reporter.name || row.original.reporter.username}</span>
             },
             {
-                  accessorKey: 'type',
-                  header: 'Type',
-                  cell: ({ row }) => (row.original.postId ? 'Post' : 'Comment')
-            },
-            {
                   accessorKey: 'content',
                   header: 'Content',
-                  cell: ({ row }) => {
-                        if (row.original.postId) {
-                              return (
-                                    <Link
-                                          href={`/posts/${row.original.post?.slug}`}
-                                          className="flex items-center text-blue-500 hover:underline"
-                                    >
-                                          {row.original.post?.title.substring(0, 50)}...
-                                          <ExternalLink className="ml-1 w-4 h-4" />
-                                    </Link>
-                              )
-                        } else if (row.original.commentId) {
-                              return <span>{row.original.comment?.commentText.substring(0, 50)}...</span>
-                        }
-                        return null
-                  }
+                  cell: ({ row }) => (
+                        <Link
+                              href={`/posts/${row.original.post?.slug}`}
+                              className="flex items-center text-blue-500 hover:underline"
+                        >
+                              {row.original.post?.title.substring(0, 50)}...
+                              <ExternalLink className="ml-1 w-4 h-4" />
+                        </Link>
+                  )
             },
             {
                   accessorKey: 'category',
@@ -123,31 +132,112 @@ export default function ReportsPanel() {
             {
                   id: 'actions',
                   header: 'Actions',
-                  cell: ({ row }) => (
-                        <div className="flex space-x-2">
-                              <button
-                                    onClick={() => handleDecision(row.original.id, ReportStatus.APPROVED)}
-                                    className="p-1 rounded bg-green-100 hover:bg-green-200"
-                                    title="Approve"
-                              >
-                                    <Check className="w-4 h-4 text-green-600" />
-                              </button>
-                              <button
-                                    onClick={() => handleDecision(row.original.id, ReportStatus.REJECTED)}
-                                    className="p-1 rounded bg-red-100 hover:bg-red-200"
-                                    title="Reject"
-                              >
-                                    <X className="w-4 h-4 text-red-600" />
-                              </button>
-                              <button
-                                    onClick={() => handleDecision(row.original.id, ReportStatus.PENDING)}
-                                    className="p-1 rounded bg-yellow-100 hover:bg-yellow-200"
-                                    title="Pending"
-                              >
-                                    <Clock className="w-4 h-4 text-yellow-600" />
-                              </button>
-                        </div>
-                  )
+                  cell: ({ row }) => {
+                        const report = row.original
+                        const postStatus = report.post?.status
+                        return (
+                              <div className="flex space-x-2">
+                                    <button
+                                          onClick={() =>
+                                                handlePostAction(
+                                                      report.postId!,
+                                                      postStatus === 'published' ? 'draft' : 'published'
+                                                )
+                                          }
+                                          className="p-1 rounded bg-blue-100 hover:bg-blue-200"
+                                          title={postStatus === 'published' ? 'Set to Draft' : 'Publish'}
+                                    >
+                                          {postStatus === 'published' ? (
+                                                <ToggleRight className="w-4 h-4 text-blue-600" />
+                                          ) : (
+                                                <ToggleLeft className="w-4 h-4 text-blue-600" />
+                                          )}
+                                    </button>
+                              </div>
+                        )
+                  }
+            }
+      ]
+
+      const commentColumns: ColumnDef<Report>[] = [
+            {
+                  accessorKey: 'reporter',
+                  header: 'Reporter',
+                  cell: ({ row }) => <span>{row.original.reporter.name || row.original.reporter.username}</span>
+            },
+            {
+                  accessorKey: 'content',
+                  header: 'Content',
+                  cell: ({ row }) => <span>{row.original.comment?.commentText.substring(0, 50)}...</span>
+            },
+            {
+                  accessorKey: 'category',
+                  header: 'Category'
+            },
+            {
+                  accessorKey: 'description',
+                  header: 'Description'
+            },
+            {
+                  accessorKey: 'reportCount',
+                  header: 'Report Count'
+            },
+            {
+                  accessorKey: 'status',
+                  header: 'Status'
+            },
+            {
+                  id: 'actions',
+                  header: 'Actions',
+                  cell: ({ row }) => {
+                        const report = row.original
+                        const commentStatus = report.comment?.status
+                        return (
+                              <div className="flex space-x-2">
+                                    {commentStatus !== 'approved' && (
+                                          <button
+                                                onClick={() => handleCommentAction(report.commentId!, 'approve')}
+                                                className="p-1 rounded bg-green-100 hover:bg-green-200"
+                                                title="Approve"
+                                          >
+                                                <Check className="w-4 h-4 text-green-600" />
+                                          </button>
+                                    )}
+                                    {commentStatus !== 'pending' && (
+                                          <button
+                                                onClick={() => handleCommentAction(report.commentId!, 'pending')}
+                                                className="p-1 rounded bg-yellow-100 hover:bg-yellow-200"
+                                                title="Set to Pending"
+                                          >
+                                                <Clock className="w-4 h-4 text-yellow-600" />
+                                          </button>
+                                    )}
+                                    {commentStatus !== 'archived' && (
+                                          <button
+                                                onClick={() => handleCommentAction(report.commentId!, 'archive')}
+                                                className="p-1 rounded bg-gray-100 hover:bg-gray-200"
+                                                title="Archive"
+                                          >
+                                                <Archive className="w-4 h-4 text-gray-600" />
+                                          </button>
+                                    )}
+                                    <button
+                                          onClick={() => handleCommentAction(report.commentId!, 'softDelete')}
+                                          className="p-1 rounded bg-red-100 hover:bg-red-200"
+                                          title="Soft Delete"
+                                    >
+                                          <Trash className="w-4 h-4 text-red-600" />
+                                    </button>
+                                    <button
+                                          onClick={() => handleCommentAction(report.commentId!, 'hardDelete')}
+                                          className="p-1 rounded bg-red-200 hover:bg-red-300"
+                                          title="Hard Delete"
+                                    >
+                                          <Skull className="w-4 h-4 text-red-700" />
+                                    </button>
+                              </div>
+                        )
+                  }
             }
       ]
 
@@ -155,33 +245,32 @@ export default function ReportsPanel() {
       if (!session) return <div>Access denied</div>
 
       return (
-            <AdminListLayout
-                  title="Reports"
-                  addNewLink=""
-                  addNewText=""
-                  columns={columns}
-                  data={reports}
-                  searchColumn="description"
-                  searchPlaceholder="Search reports..."
-                  onSearch={async (searchTerm) => {
-                        // Implement search functionality if needed
-                  }}
-                  searchOptions={[
-                        { value: 'all', label: 'All' },
-                        { value: 'post', label: 'Posts' },
-                        { value: 'comment', label: 'Comments' }
-                  ]}
-                  searchTypeSelector={
-                        <select
-                              value={filter}
-                              onChange={(e) => setFilter(e.target.value as 'all' | 'post' | 'comment')}
-                              className="p-2 border rounded"
-                        >
-                              <option value="all">All Types</option>
-                              <option value="post">Posts</option>
-                              <option value="comment">Comments</option>
-                        </select>
-                  }
-            />
+            <div className="container mx-auto p-4">
+                  <h1 className="text-2xl font-bold mb-4">Reports</h1>
+                  <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'post' | 'comment')}>
+                        <TabsList>
+                              <TabsTrigger value="post">Post Reports</TabsTrigger>
+                              <TabsTrigger value="comment">Comment Reports</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="post">
+                              <AdminListLayout
+                                    title=""
+                                    addNewLink=""
+                                    addNewText=""
+                                    columns={postColumns}
+                                    data={reports.filter((report) => report.postId)}
+                              />
+                        </TabsContent>
+                        <TabsContent value="comment">
+                              <AdminListLayout
+                                    title=""
+                                    addNewLink=""
+                                    addNewText=""
+                                    columns={commentColumns}
+                                    data={reports.filter((report) => report.commentId)}
+                              />
+                        </TabsContent>
+                  </Tabs>
+            </div>
       )
 }

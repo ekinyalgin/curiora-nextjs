@@ -18,16 +18,56 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
+      const session = await getServerSession(authOptions)
+      if (!session || session.user.role !== 'ADMIN') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
       const id = parseInt(params.id)
-      const body = await request.json()
+      const { action } = await request.json()
 
-      const updatedComment = await prisma.comment.update({
-            where: { id },
-            data: body,
-            include: { user: true, post: true }
-      })
+      try {
+            let updatedComment
 
-      return NextResponse.json(updatedComment)
+            switch (action) {
+                  case 'approve':
+                        updatedComment = await prisma.comment.update({
+                              where: { id },
+                              data: { status: 'approved' }
+                        })
+                        break
+                  case 'pending':
+                        updatedComment = await prisma.comment.update({
+                              where: { id },
+                              data: { status: 'pending' }
+                        })
+                        break
+                  case 'archive':
+                        updatedComment = await prisma.comment.update({
+                              where: { id },
+                              data: { status: 'archived', archivedAt: new Date() }
+                        })
+                        break
+                  case 'softDelete':
+                        updatedComment = await prisma.comment.update({
+                              where: { id },
+                              data: { isDeleted: true }
+                        })
+                        break
+                  case 'hardDelete':
+                        updatedComment = await prisma.comment.delete({
+                              where: { id }
+                        })
+                        break
+                  default:
+                        return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+            }
+
+            return NextResponse.json(updatedComment)
+      } catch (error) {
+            console.error('Error updating comment:', error)
+            return NextResponse.json({ error: 'Failed to update comment' }, { status: 500 })
+      }
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {

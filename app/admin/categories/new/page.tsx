@@ -7,6 +7,7 @@ import { AdminFormLayout } from '@/components/ui/admin-form-layout';
 import { LanguageSelect } from '@/components/ui/language-select';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SlugInput, createSlug } from '@/components/ui/slug-input';
+import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils';
 
 export default function NewCategory() {
       const [category, setCategory] = useState({
@@ -31,32 +32,6 @@ export default function NewCategory() {
             setParentCategories(data);
       }
 
-      const checkSlugUniqueness = async (slug: string): Promise<boolean> => {
-            const response = await fetch(`/api/check-slug?slug=${encodeURIComponent(slug)}&type=category`);
-            if (!response.ok) {
-                  throw new Error('Failed to check slug uniqueness');
-            }
-            const data = await response.json();
-            return data.isUnique;
-      };
-
-      async function generateUniqueSlug(
-            baseSlug: string,
-            checkUniqueness: (slug: string) => Promise<boolean>
-      ): Promise<string> {
-            let slug = baseSlug;
-            let counter = 1;
-            let isUnique = await checkUniqueness(slug);
-
-            while (!isUnique) {
-                  slug = `${baseSlug}-${counter}`;
-                  isUnique = await checkUniqueness(slug);
-                  counter++;
-            }
-
-            return slug;
-      }
-
       const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault();
             try {
@@ -66,9 +41,9 @@ export default function NewCategory() {
                   }
 
                   // Slug benzersizliğini kontrol et
-                  const isUnique = await checkSlugUniqueness(categoryToSubmit.slug);
+                  const isUnique = await checkSlugUniqueness(categoryToSubmit.slug, 'category');
                   if (!isUnique) {
-                        categoryToSubmit.slug = await generateUniqueSlug(categoryToSubmit.slug, checkSlugUniqueness);
+                        categoryToSubmit.slug = await generateUniqueSlug(categoryToSubmit.slug, 'category');
                   }
 
                   const response = await fetch('/api/categories', {

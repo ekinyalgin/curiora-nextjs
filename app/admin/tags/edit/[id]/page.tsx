@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { LanguageSelect } from '@/components/ui/language-select';
 import { SlugInput, createSlug } from '@/components/ui/slug-input';
+import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils';
 
 export default function TagForm({ params }: { params: { id: string } }) {
       const [tag, setTag] = useState({ name: '', slug: '', description: '', language_id: '' });
@@ -40,32 +41,6 @@ export default function TagForm({ params }: { params: { id: string } }) {
             }
       }
 
-      const checkSlugUniqueness = async (slug: string): Promise<boolean> => {
-            const response = await fetch(`/api/check-slug?slug=${encodeURIComponent(slug)}&type=tag&id=${id}`);
-            if (!response.ok) {
-                  throw new Error('Failed to check slug uniqueness');
-            }
-            const data = await response.json();
-            return data.isUnique;
-      };
-
-      async function generateUniqueSlug(
-            baseSlug: string,
-            checkUniqueness: (slug: string) => Promise<boolean>
-      ): Promise<string> {
-            let slug = baseSlug;
-            let counter = 1;
-            let isUnique = await checkUniqueness(slug);
-
-            while (!isUnique) {
-                  slug = `${baseSlug}-${counter}`;
-                  isUnique = await checkUniqueness(slug);
-                  counter++;
-            }
-
-            return slug;
-      }
-
       async function handleSubmit(e: React.FormEvent) {
             e.preventDefault();
             try {
@@ -75,9 +50,9 @@ export default function TagForm({ params }: { params: { id: string } }) {
                   }
 
                   // Slug benzersizliğini kontrol et
-                  const isUnique = await checkSlugUniqueness(tagToSubmit.slug);
+                  const isUnique = await checkSlugUniqueness(tagToSubmit.slug, 'tag', id);
                   if (!isUnique) {
-                        tagToSubmit.slug = await generateUniqueSlug(tagToSubmit.slug, checkSlugUniqueness);
+                        tagToSubmit.slug = await generateUniqueSlug(tagToSubmit.slug, 'tag', id);
                   }
 
                   const method = id ? 'PUT' : 'POST';

@@ -10,6 +10,7 @@ import { LanguageSelect } from '@/components/ui/language-select';
 import { FeaturedImageSelect } from '@/components/ui/featured-image-select';
 import { TagInput } from '@/components/ui/tag-input';
 import { SlugInput, createSlug } from '@/components/ui/slug-input';
+import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils';
 
 export default function EditPost({ params }: { params: { id: string } }) {
       const [post, setPost] = useState({
@@ -66,32 +67,6 @@ export default function EditPost({ params }: { params: { id: string } }) {
             setCategories(data);
       }
 
-      const checkSlugUniqueness = async (slug: string): Promise<boolean> => {
-            const response = await fetch(`/api/check-slug?slug=${encodeURIComponent(slug)}&type=post&id=${id}`);
-            if (!response.ok) {
-                  throw new Error('Failed to check slug uniqueness');
-            }
-            const data = await response.json();
-            return data.isUnique;
-      };
-
-      async function generateUniqueSlug(
-            baseSlug: string,
-            checkUniqueness: (slug: string) => Promise<boolean>
-      ): Promise<string> {
-            let slug = baseSlug;
-            let counter = 1;
-            let isUnique = await checkUniqueness(slug);
-
-            while (!isUnique) {
-                  slug = `${baseSlug}-${counter}`;
-                  isUnique = await checkUniqueness(slug);
-                  counter++;
-            }
-
-            return slug;
-      }
-
       const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault();
             try {
@@ -101,9 +76,9 @@ export default function EditPost({ params }: { params: { id: string } }) {
                   }
 
                   // Slug benzersizliğini kontrol et
-                  const isUnique = await checkSlugUniqueness(postToSubmit.slug);
+                  const isUnique = await checkSlugUniqueness(postToSubmit.slug, 'post', id);
                   if (!isUnique) {
-                        postToSubmit.slug = await generateUniqueSlug(postToSubmit.slug, checkSlugUniqueness);
+                        postToSubmit.slug = await generateUniqueSlug(postToSubmit.slug, 'post', id);
                   }
 
                   const response = await fetch(`/api/posts/${id}`, {

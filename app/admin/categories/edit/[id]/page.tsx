@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LanguageSelect } from '@/components/ui/language-select';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SlugInput, createSlug } from '@/components/ui/slug-input';
+import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils';
 
 export default function CategoryForm({ params }: { params: { id: string } }) {
       const [category, setCategory] = useState({
@@ -47,32 +48,6 @@ export default function CategoryForm({ params }: { params: { id: string } }) {
             setParentCategories(data.filter((c) => c.id !== id));
       }
 
-      const checkSlugUniqueness = async (slug: string): Promise<boolean> => {
-            const response = await fetch(`/api/check-slug?slug=${encodeURIComponent(slug)}&type=category&id=${id}`);
-            if (!response.ok) {
-                  throw new Error('Failed to check slug uniqueness');
-            }
-            const data = await response.json();
-            return data.isUnique;
-      };
-
-      async function generateUniqueSlug(
-            baseSlug: string,
-            checkUniqueness: (slug: string) => Promise<boolean>
-      ): Promise<string> {
-            let slug = baseSlug;
-            let counter = 1;
-            let isUnique = await checkUniqueness(slug);
-
-            while (!isUnique) {
-                  slug = `${baseSlug}-${counter}`;
-                  isUnique = await checkUniqueness(slug);
-                  counter++;
-            }
-
-            return slug;
-      }
-
       async function handleSubmit(e: React.FormEvent) {
             e.preventDefault();
             try {
@@ -82,9 +57,9 @@ export default function CategoryForm({ params }: { params: { id: string } }) {
                   }
 
                   // Slug benzersizliğini kontrol et
-                  const isUnique = await checkSlugUniqueness(categoryToSubmit.slug);
+                  const isUnique = await checkSlugUniqueness(categoryToSubmit.slug, 'category', id);
                   if (!isUnique) {
-                        categoryToSubmit.slug = await generateUniqueSlug(categoryToSubmit.slug, checkSlugUniqueness);
+                        categoryToSubmit.slug = await generateUniqueSlug(categoryToSubmit.slug, 'category', id);
                   }
 
                   const method = id ? 'PUT' : 'POST';

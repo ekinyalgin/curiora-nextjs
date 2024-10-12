@@ -142,6 +142,7 @@ model Post {
   voteCount  PostVoteCount?
   commentCount Int @default(0)
   reports Report[]
+  reportCount Int     @default(0)
 }
 
 enum Status {
@@ -168,6 +169,7 @@ model Comment {
   voteCount        CommentVoteCount?
   isDeleted        Boolean   @default(false) 
   reports Report[]
+  reportCount Int     @default(0)
 }
 
 model Media {
@@ -245,9 +247,9 @@ model Report {
   status      ReportStatus   @default(PENDING)
   reporterId  String
   reporter    User           @relation("ReporterReports", fields: [reporterId], references: [id])
-  postId      String?
+  postId      Int?
   post        Post?          @relation(fields: [postId], references: [id])
-  commentId   String?
+  commentId   Int?
   comment     Comment?       @relation(fields: [commentId], references: [id])
 
   @@index([postId])

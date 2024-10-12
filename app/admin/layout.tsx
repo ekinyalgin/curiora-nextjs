@@ -1,89 +1,94 @@
-'use client';
+'use client'
 
-import { ReactNode } from 'react';
-import Link from 'next/link';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import AdminHeader from '@/components/AdminHeader';
-import { FileText } from 'lucide-react';
-import { Users } from 'lucide-react';
-import { MessageSquare } from 'lucide-react';
+import { ReactNode } from 'react'
+import Link from 'next/link'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import AdminHeader from '@/components/AdminHeader'
+import { FileText } from 'lucide-react'
+import { Users } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-      const { data: session, status } = useSession();
-      const router = useRouter();
-      const [isLoading, setIsLoading] = useState(true);
+      const { data: session, status } = useSession()
+      const router = useRouter()
+      const [isLoading, setIsLoading] = useState(true)
 
       useEffect(() => {
-            if (status === 'loading') return;
+            if (status === 'loading') return
             if (!session || session.user?.role !== 1) {
-                  router.push('/');
+                  router.push('/')
             } else {
-                  setIsLoading(false);
+                  setIsLoading(false)
             }
-      }, [session, status, router]);
+      }, [session, status, router])
 
       if (isLoading) {
-            return <div>Loading...</div>;
+            return <div>Loading...</div>
       }
 
       if (!session || session.user?.role !== 1) {
-            return null;
+            return null
       }
 
       const menuItems = [
             {
                   title: 'Dashboard',
                   href: '/admin',
-                  icon: 'Home',
+                  icon: 'Home'
             },
             {
                   title: 'Roles',
                   href: '/admin/roles',
-                  icon: 'Shield',
+                  icon: 'Shield'
             },
             {
                   title: 'Settings',
                   href: '/admin/settings',
-                  icon: 'Settings',
+                  icon: 'Settings'
             },
             {
                   title: 'Tags',
                   href: '/admin/tags',
-                  icon: 'Tag',
+                  icon: 'Tag'
             },
             {
                   title: 'Categories',
                   href: '/admin/categories',
-                  icon: 'List',
+                  icon: 'List'
             },
             {
                   title: 'Languages',
                   href: '/admin/languages',
-                  icon: 'Globe',
+                  icon: 'Globe'
             },
             {
                   title: 'Posts',
                   href: '/admin/posts',
-                  icon: FileText,
+                  icon: FileText
             },
             {
                   title: 'Users',
                   href: '/admin/users',
-                  icon: Users,
+                  icon: Users
             },
             {
                   title: 'Media',
                   href: '/admin/media',
-                  icon: Users,
+                  icon: Users
             },
             {
                   title: 'Comments',
                   href: '/admin/comments',
-                  icon: MessageSquare,
+                  icon: MessageSquare
             },
-      ];
+            {
+                  title: 'Reports',
+                  href: '/admin/reports',
+                  icon: MessageSquare
+            }
+      ]
 
       return (
             <div className="flex flex-col h-screen bg-gray-100">
@@ -95,7 +100,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                                           <Link
                                                 key={item.title}
                                                 href={item.href}
-                                                className="block py-2 px-4 text-gray-600 hover:bg-gray-200">
+                                                className="block py-2 px-4 text-gray-600 hover:bg-gray-200"
+                                          >
                                                 {item.title}
                                           </Link>
                                     ))}
@@ -107,5 +113,5 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                         <main className="flex-1 p-8 overflow-y-auto">{children}</main>
                   </div>
             </div>
-      );
+      )
 }

@@ -33,7 +33,7 @@ export default function TagsPage() {
       }
 
       const handleEdit = (id: number) => {
-            router.push(`/admin/tags/${id}`);
+            router.push(`/admin/tags/edit/${id}`);
       };
 
       const columns: ColumnDef<TagWithLanguage>[] = [

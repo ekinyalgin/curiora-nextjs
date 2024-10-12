@@ -93,11 +93,23 @@ export default function EditPost({ params }: { params: { id: string } }) {
 
       const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             const { name, value } = e.target;
-            setPost((prev) => ({ ...prev, [name]: value }));
-            if (name === 'title') {
-                  setPost((prev) => ({ ...prev, slug: slugify(value, { lower: true, strict: true }) }));
-            }
+
+            setPost((prev) => ({
+                  ...prev,
+                  [name]: value,
+                  // `title` değiştiğinde ve `slug` kullanıcı tarafından değiştirilmemişse otomatik olarak güncelle.
+                  slug: name === 'title' && !prev.slug ? slugify(value, { lower: true, strict: true }) : prev.slug,
+            }));
       };
+
+      useEffect(() => {
+            if (post.title && !post.slug) {
+                  setPost((prev) => ({
+                        ...prev,
+                        slug: slugify(post.title, { lower: true, strict: true }),
+                  }));
+            }
+      }, [post.title]); // `post.title` değiştiğinde bu effect çalışacak
 
       const handleFeaturedImageSelect = (imageId: number | null) => {
             setPost((prev) => ({ ...prev, featuredImageId: imageId }));
@@ -122,8 +134,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         label="Slug"
                         value={post.slug}
                         onChange={handleInputChange}
-                        placeholder="Enter post slug"
-                        required
+                        placeholder="Enter slug or leave empty to generate from title"
                   />
                   <Textarea
                         name="content"

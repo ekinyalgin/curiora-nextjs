@@ -6,16 +6,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { AdminFormLayout } from '@/components/ui/admin-form-layout';
 import { LanguageSelect } from '@/components/ui/language-select';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import slugify from 'slugify';
+import { SlugInput } from '@/components/ui/slug-input';
 
 export default function NewCategory() {
-      const [categoryName, setCategoryName] = useState('');
-      const [categorySlug, setCategorySlug] = useState('');
-      const [categoryDescription, setCategoryDescription] = useState('');
-      const [categoryLanguageId, setCategoryLanguageId] = useState('');
-      const [categoryParentId, setCategoryParentId] = useState<string | null>(null);
-      const [categorySeoDescription, setCategorySeoDescription] = useState('');
-      const [categorySeoTitle, setCategorySeoTitle] = useState('');
+      const [category, setCategory] = useState({
+            name: '',
+            slug: '',
+            description: '',
+            languageId: '',
+            parentId: null as string | null,
+            seoDescription: '',
+            seoTitle: '',
+      });
       const [parentCategories, setParentCategories] = useState([]);
       const router = useRouter();
 
@@ -32,19 +34,10 @@ export default function NewCategory() {
       const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault();
             try {
-                  const slug = categorySlug || slugify(categoryName, { lower: true, strict: true });
                   const response = await fetch('/api/categories', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                              name: categoryName,
-                              slug,
-                              description: categoryDescription,
-                              languageId: categoryLanguageId,
-                              parentId: categoryParentId,
-                              seoDescription: categorySeoDescription,
-                              seoTitle: categorySeoTitle,
-                        }),
+                        body: JSON.stringify(category),
                   });
 
                   if (!response.ok) {
@@ -59,6 +52,10 @@ export default function NewCategory() {
             }
       };
 
+      const handleInputChange = (name: string, value: string) => {
+            setCategory((prev) => ({ ...prev, [name]: value }));
+      };
+
       return (
             <AdminFormLayout
                   title="Add New Category"
@@ -66,46 +63,58 @@ export default function NewCategory() {
                   onSubmit={handleSubmit}
                   submitText="Add Category">
                   <Input
-                        type="text"
-                        value={categoryName}
-                        onChange={(e) => setCategoryName(e.target.value)}
+                        name="name"
+                        label="Name"
+                        value={category.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
                         placeholder="Category name"
                         required
                   />
-                  <Input
-                        type="text"
-                        value={categorySlug}
-                        onChange={(e) => setCategorySlug(e.target.value)}
-                        placeholder="Slug (optional, will be generated from name if empty)"
+                  <SlugInput
+                        name="slug"
+                        label="Slug"
+                        value={category.slug}
+                        onChange={handleInputChange}
+                        sourceValue={category.name}
                   />
                   <Textarea
-                        value={categoryDescription}
-                        onChange={(e) => setCategoryDescription(e.target.value)}
+                        name="description"
+                        label="Description"
+                        value={category.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
                         placeholder="Category description"
                   />
-                  <LanguageSelect value={categoryLanguageId} onChange={setCategoryLanguageId} />
-                  <Select value={categoryParentId || undefined} onValueChange={setCategoryParentId}>
+                  <LanguageSelect
+                        value={category.languageId}
+                        onChange={(value) => handleInputChange('languageId', value)}
+                  />
+                  <Select
+                        value={category.parentId || 'none'}
+                        onValueChange={(value) => handleInputChange('parentId', value === 'none' ? null : value)}>
                         <SelectTrigger>
                               <SelectValue placeholder="Select parent category" />
                         </SelectTrigger>
                         <SelectContent>
-                              <SelectItem value="null">None</SelectItem>
-                              {parentCategories.map((category) => (
-                                    <SelectItem key={category.id} value={category.id.toString()}>
-                                          {category.name}
+                              <SelectItem value="none">None</SelectItem>
+                              {parentCategories.map((parentCategory: any) => (
+                                    <SelectItem key={parentCategory.id} value={parentCategory.id.toString()}>
+                                          {parentCategory.name}
                                     </SelectItem>
                               ))}
                         </SelectContent>
                   </Select>
                   <Input
-                        type="text"
-                        value={categorySeoTitle}
-                        onChange={(e) => setCategorySeoTitle(e.target.value)}
+                        name="seoTitle"
+                        label="SEO Title"
+                        value={category.seoTitle}
+                        onChange={(e) => handleInputChange('seoTitle', e.target.value)}
                         placeholder="SEO Title"
                   />
                   <Textarea
-                        value={categorySeoDescription}
-                        onChange={(e) => setCategorySeoDescription(e.target.value)}
+                        name="seoDescription"
+                        label="SEO Description"
+                        value={category.seoDescription}
+                        onChange={(e) => handleInputChange('seoDescription', e.target.value)}
                         placeholder="SEO Description"
                   />
             </AdminFormLayout>

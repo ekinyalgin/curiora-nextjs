@@ -11,7 +11,7 @@ interface Post {
       slug: string;
       status: string;
       type: string;
-      author: { name: string };
+      user: { name: string };
       category: { name: string };
       language: { name: string };
       publishedAt: string | null;
@@ -60,7 +60,7 @@ export default function PostsPage() {
                   header: 'Type',
             },
             {
-                  accessorKey: 'author.name',
+                  accessorKey: 'user.name',
                   header: 'Author',
             },
             {

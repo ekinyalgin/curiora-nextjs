@@ -23,7 +23,7 @@ export default function NewPost() {
             languageId: '',
             seoTitle: '',
             seoDescription: '',
-            featuredImageId: null,
+            featuredImageId: null as number | null,
             tags: [] as string[],
       });
       const [users, setUsers] = useState([]);
@@ -75,12 +75,12 @@ export default function NewPost() {
       const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             const { name, value } = e.target;
             setPost((prev) => ({ ...prev, [name]: value }));
-            if (name === 'title') {
+            if (name === 'title' && !post.slug) {
                   setPost((prev) => ({ ...prev, slug: slugify(value, { lower: true, strict: true }) }));
             }
       };
 
-      const handleFeaturedImageSelect = (imageId: number) => {
+      const handleFeaturedImageSelect = (imageId: number | null) => {
             setPost((prev) => ({ ...prev, featuredImageId: imageId }));
       };
 
@@ -107,8 +107,7 @@ export default function NewPost() {
                         label="Slug"
                         value={post.slug}
                         onChange={handleInputChange}
-                        placeholder="Enter post slug (or leave empty to generate from title)"
-                        required
+                        placeholder="Enter slug or leave empty to generate from title"
                   />
                   <Textarea
                         name="content"
@@ -146,7 +145,7 @@ export default function NewPost() {
                               <SelectValue placeholder="Select user" />
                         </SelectTrigger>
                         <SelectContent>
-                              {users.map((user) => (
+                              {users.map((user: any) => (
                                     <SelectItem key={user.id} value={user.id}>
                                           {user.name}
                                     </SelectItem>
@@ -160,7 +159,7 @@ export default function NewPost() {
                               <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                              {categories.map((category) => (
+                              {categories.map((category: any) => (
                                     <SelectItem key={category.id} value={category.id.toString()}>
                                           {category.name}
                                     </SelectItem>

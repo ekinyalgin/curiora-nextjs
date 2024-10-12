@@ -5,28 +5,24 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AdminFormLayout } from '@/components/ui/admin-form-layout';
 import { LanguageSelect } from '@/components/ui/language-select';
-import slugify from 'slugify';
+import { SlugInput, createSlug, generateUniqueSlug } from '@/components/ui/slug-input';
 
 export default function NewTag() {
-      const [tagName, setTagName] = useState('');
-      const [tagSlug, setTagSlug] = useState('');
-      const [tagDescription, setTagDescription] = useState('');
-      const [tagLanguageId, setTagLanguageId] = useState('');
+      const [tag, setTag] = useState({ name: '', slug: '', description: '', language_id: '' });
       const router = useRouter();
 
       const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault();
             try {
-                  const slug = tagSlug || slugify(tagName, { lower: true, strict: true });
+                  const tagToSubmit = { ...tag };
+                  if (!tagToSubmit.slug) {
+                        tagToSubmit.slug = createSlug(tagToSubmit.name);
+                  }
+                  tagToSubmit.slug = await generateUniqueSlug(tagToSubmit.slug, checkSlugUniqueness);
                   const response = await fetch('/api/tags', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                              name: tagName,
-                              slug,
-                              description: tagDescription,
-                              language_id: tagLanguageId,
-                        }),
+                        body: JSON.stringify(tagToSubmit),
                   });
 
                   if (!response.ok) {
@@ -41,27 +37,50 @@ export default function NewTag() {
             }
       };
 
+      const handleInputChange = (name: string, value: string) => {
+            setTag((prev) => ({ ...prev, [name]: value }));
+      };
+
+      const checkSlugUniqueness = async (slug: string): Promise<boolean> => {
+            const response = await fetch(`/api/check-slug?slug=${encodeURIComponent(slug)}&type=tag`);
+            if (!response.ok) {
+                  throw new Error('Failed to check slug uniqueness');
+            }
+            const data = await response.json();
+            return data.isUnique;
+      };
+
       return (
             <AdminFormLayout title="Add New Tag" backLink="/admin/tags" onSubmit={handleSubmit} submitText="Add Tag">
                   <Input
-                        type="text"
-                        value={tagName}
-                        onChange={(e) => setTagName(e.target.value)}
+                        name="name"
+                        label="Name"
+                        value={tag.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
                         placeholder="Tag name"
                         required
                   />
-                  <Input
-                        type="text"
-                        value={tagSlug}
-                        onChange={(e) => setTagSlug(e.target.value)}
-                        placeholder="Slug (optional, will be generated from name if empty)"
+                  <SlugInput
+                        name="slug"
+                        label="Slug"
+                        value={tag.slug}
+                        onChange={handleInputChange}
+                        sourceValue={tag.name}
+                        placeholder="Enter slug or leave empty to generate automatically"
+                        autoGenerate={false}
+                        checkSlugUniqueness={checkSlugUniqueness}
                   />
                   <Textarea
-                        value={tagDescription}
-                        onChange={(e) => setTagDescription(e.target.value)}
+                        name="description"
+                        label="Description"
+                        value={tag.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
                         placeholder="Tag description"
                   />
-                  <LanguageSelect value={tagLanguageId} onChange={setTagLanguageId} />
+                  <LanguageSelect
+                        value={tag.language_id}
+                        onChange={(value) => handleInputChange('language_id', value)}
+                  />
             </AdminFormLayout>
       );
 }

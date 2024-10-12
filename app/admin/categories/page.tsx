@@ -66,7 +66,7 @@ export default function CategoriesPage() {
       }
 
       const handleEdit = (id: number) => {
-            router.push(`/admin/categories/${id}`);
+            router.push(`/admin/categories/edit/${id}`);
       };
 
       const handleSearch = async (term: string) => {

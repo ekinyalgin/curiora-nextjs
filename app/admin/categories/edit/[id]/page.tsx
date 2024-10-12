@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { LanguageSelect } from '@/components/ui/language-select';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import slugify from 'slugify';
+import { SlugInput } from '@/components/ui/slug-input';
 
 export default function CategoryForm({ params }: { params: { id: string } }) {
       const [category, setCategory] = useState({
@@ -19,6 +19,7 @@ export default function CategoryForm({ params }: { params: { id: string } }) {
             seoDescription: '',
             seoTitle: '',
       });
+
       const [parentCategories, setParentCategories] = useState([]);
       const router = useRouter();
       const id = params.id === 'new' ? null : parseInt(params.id);
@@ -36,7 +37,7 @@ export default function CategoryForm({ params }: { params: { id: string } }) {
             setCategory({
                   ...data,
                   languageId: data.languageId ? data.languageId.toString() : '',
-                  parentId: data.parentId ? data.parentId.toString() : null,
+                  parentId: data.parentId ? data.parentId.toString() : 'none',
             });
       }
 
@@ -54,7 +55,10 @@ export default function CategoryForm({ params }: { params: { id: string } }) {
                   const response = await fetch(url, {
                         method,
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(category),
+                        body: JSON.stringify({
+                              ...category,
+                              parentId: category.parentId === 'none' ? null : category.parentId,
+                        }),
                   });
                   if (!response.ok) throw new Error('Failed to save category');
                   router.push('/admin/categories');
@@ -63,6 +67,10 @@ export default function CategoryForm({ params }: { params: { id: string } }) {
                   alert('Failed to save category. Please try again.');
             }
       }
+
+      const handleInputChange = (name: string, value: string) => {
+            setCategory((prev) => ({ ...prev, [name]: value }));
+      };
 
       return (
             <AdminFormLayout
@@ -74,37 +82,37 @@ export default function CategoryForm({ params }: { params: { id: string } }) {
                         name="name"
                         label="Name"
                         value={category.name}
-                        onChange={(e) => setCategory({ ...category, name: e.target.value })}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
                         placeholder="Enter category name"
                         required
                   />
-                  <Input
+                  <SlugInput
                         name="slug"
                         label="Slug"
                         value={category.slug}
-                        onChange={(e) => setCategory({ ...category, slug: e.target.value })}
-                        placeholder="Enter slug or leave empty to generate from name"
+                        onChange={handleInputChange}
+                        sourceValue={category.name}
                   />
                   <Textarea
                         name="description"
                         label="Description"
                         value={category.description}
-                        onChange={(e) => setCategory({ ...category, description: e.target.value })}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
                         placeholder="Enter category description (optional)"
                   />
                   <LanguageSelect
                         value={category.languageId}
-                        onChange={(value) => setCategory({ ...category, languageId: value })}
+                        onChange={(value) => handleInputChange('languageId', value)}
                   />
                   <Select
-                        value={category.parentId || undefined}
-                        onValueChange={(value) => setCategory({ ...category, parentId: value })}>
+                        value={category.parentId || 'none'}
+                        onValueChange={(value) => handleInputChange('parentId', value)}>
                         <SelectTrigger>
                               <SelectValue placeholder="Select parent category" />
                         </SelectTrigger>
                         <SelectContent>
-                              <SelectItem value="null">None</SelectItem>
-                              {parentCategories.map((parentCategory) => (
+                              <SelectItem value="none">None</SelectItem>
+                              {parentCategories.map((parentCategory: any) => (
                                     <SelectItem key={parentCategory.id} value={parentCategory.id.toString()}>
                                           {parentCategory.name}
                                     </SelectItem>
@@ -115,14 +123,14 @@ export default function CategoryForm({ params }: { params: { id: string } }) {
                         name="seoTitle"
                         label="SEO Title"
                         value={category.seoTitle}
-                        onChange={(e) => setCategory({ ...category, seoTitle: e.target.value })}
+                        onChange={(e) => handleInputChange('seoTitle', e.target.value)}
                         placeholder="Enter SEO title"
                   />
                   <Textarea
                         name="seoDescription"
                         label="SEO Description"
                         value={category.seoDescription}
-                        onChange={(e) => setCategory({ ...category, seoDescription: e.target.value })}
+                        onChange={(e) => handleInputChange('seoDescription', e.target.value)}
                         placeholder="Enter SEO description"
                   />
             </AdminFormLayout>

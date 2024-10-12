@@ -9,11 +9,47 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
+      const { searchParams } = new URL(req.url)
+      const filter = searchParams.get('filter')
+      const category = searchParams.get('category')
+
+      let whereClause: any = {}
+
+      if (filter === 'post') {
+            whereClause.postId = { not: null }
+      } else if (filter === 'comment') {
+            whereClause.commentId = { not: null }
+      }
+
+      if (category && category !== 'all') {
+            whereClause.category = category
+      }
+
       try {
             const reports = await prisma.report.findMany({
+                  where: whereClause,
                   include: {
-                        post: { select: { reportCount: true } },
-                        comment: { select: { reportCount: true } }
+                        post: {
+                              select: {
+                                    reportCount: true,
+                                    id: true,
+                                    title: true,
+                                    slug: true
+                              }
+                        },
+                        comment: {
+                              select: {
+                                    reportCount: true,
+                                    id: true,
+                                    commentText: true
+                              }
+                        },
+                        reporter: {
+                              select: {
+                                    name: true,
+                                    username: true
+                              }
+                        }
                   },
                   orderBy: { createdAt: 'desc' }
             })

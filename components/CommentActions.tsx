@@ -116,6 +116,10 @@ export default function CommentActions({
             }
       }
 
+      const handleEdit = () => {
+            onEdit()
+      }
+
       return (
             <div className="">
                   {isActiveTextarea && (
@@ -172,7 +176,7 @@ export default function CommentActions({
                               {canEditDelete && !isDeleted && (
                                     <>
                                           <Tooltip content="Edit Comment">
-                                                <button onClick={onEdit} className="text-black text-sm">
+                                                <button onClick={handleEdit} className="text-black text-sm">
                                                       <Settings2 className="w-4" />
                                                 </button>
                                           </Tooltip>

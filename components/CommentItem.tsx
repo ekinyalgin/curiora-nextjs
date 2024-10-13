@@ -6,6 +6,8 @@ import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import { ReportCategory } from '@prisma/client'
 import Notification from './Notification'
+import { ClipboardCopy } from 'lucide-react'
+import { Tooltip } from './ui/Tooltip'
 
 interface CommentItemProps {
       comment: any
@@ -60,9 +62,14 @@ export default function CommentItem({
       }
 
       const handleEdit = async (text: string) => {
-            await onEdit(comment.id, text)
-            updateComment(comment.id, { ...comment, commentText: text })
-            setActiveTextarea(null)
+            try {
+                  await onEdit(comment.id, text)
+                  updateComment(comment.id, { ...comment, commentText: text })
+                  setActiveTextarea(null)
+            } catch (error) {
+                  console.error('Error editing comment:', error)
+                  alert('Failed to edit comment. Please try again.')
+            }
       }
 
       const handleDelete = async () => {
@@ -158,8 +165,15 @@ export default function CommentItem({
             }
       }
 
+      const copyCommentLink = () => {
+            const commentUrl = `${window.location.href.split('#')[0]}#comment-${comment.id}`
+            navigator.clipboard.writeText(commentUrl)
+            // Opsiyonel: Kopyalandığına dair bir bildirim gösterebilirsiniz
+            setNotification({ message: 'Comment link copied to clipboard', type: 'success' })
+      }
+
       return (
-            <div className={`mb-4 ${isChild ? 'ml-10' : ''}`}>
+            <div id={`comment-${comment.id}`} className={`mb-4 ${isChild ? 'ml-10' : ''}`}>
                   <div className={`bg-gray-50 p-4 rounded-lg ${getCommentStyle()}`}>
                         <div className="flex items-center space-x-2 mb-2">
                               {comment.user.image ? (
@@ -176,6 +190,11 @@ export default function CommentItem({
 
                               <div className="font-semibold text-sm">{comment.user.name}</div>
                               <div className="text-sm text-gray-300">|</div>
+                              <Tooltip content="Copy Comment Link">
+                                    <button onClick={copyCommentLink} className="text-black hover:text-gray-700">
+                                          <ClipboardCopy strokeWidth="1.2" className="w-3 h-3" />
+                                    </button>
+                              </Tooltip>
                               <div className="text-xs text-gray-500">
                                     <RelativeDate date={comment.createdAt} />
                               </div>

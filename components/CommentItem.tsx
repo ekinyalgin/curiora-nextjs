@@ -63,8 +63,20 @@ export default function CommentItem({
 
       const handleEdit = async (text: string) => {
             try {
-                  await onEdit(comment.id, text)
-                  updateComment(comment.id, { ...comment, commentText: text })
+                  const response = await fetch(`/api/comments/${comment.id}/edit`, {
+                        method: 'PUT',
+                        headers: {
+                              'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ commentText: text })
+                  })
+
+                  if (!response.ok) {
+                        throw new Error('Failed to edit comment')
+                  }
+
+                  const updatedComment = await response.json()
+                  updateComment(comment.id, updatedComment)
                   setActiveTextarea(null)
             } catch (error) {
                   console.error('Error editing comment:', error)
@@ -77,8 +89,25 @@ export default function CommentItem({
       }
 
       const handleStatusChange = async (newStatus: string, archivedAt?: Date) => {
-            await onStatusChange(comment.id, newStatus, archivedAt)
-            updateComment(comment.id, { ...comment, status: newStatus, archivedAt })
+            try {
+                  const response = await fetch(`/api/comments/${comment.id}/status`, {
+                        method: 'PATCH',
+                        headers: {
+                              'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status: newStatus, archivedAt })
+                  })
+
+                  if (!response.ok) {
+                        throw new Error('Failed to change comment status')
+                  }
+
+                  const updatedComment = await response.json()
+                  updateComment(comment.id, updatedComment)
+            } catch (error) {
+                  console.error('Error changing comment status:', error)
+                  alert('Failed to change comment status. Please try again.')
+            }
       }
 
       const handleSoftDelete = async () => {

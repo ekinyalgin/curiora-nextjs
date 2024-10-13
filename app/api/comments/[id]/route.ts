@@ -19,61 +19,61 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
       const session = await getServerSession(authOptions)
-      if (!session || session.user.role !== 1) {
+      if (!session) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
       const id = parseInt(params.id)
-      const { action } = await request.json()
+      const { action, commentText } = await request.json()
 
       try {
             let updatedComment
 
             switch (action) {
+                  case 'updateText':
+                        updatedComment = await prisma.comment.update({
+                              where: { id },
+                              data: { commentText },
+                              include: { user: true }
+                        })
+                        break
+
                   case 'approve':
                         updatedComment = await prisma.comment.update({
                               where: { id },
                               data: { status: 'approved' }
                         })
                         break
-                  case 'pending':
-                        updatedComment = await prisma.comment.update({
-                              where: { id },
-                              data: { status: 'pending' }
-                        })
-                        break
+
                   case 'archive':
                         updatedComment = await prisma.comment.update({
                               where: { id },
                               data: { status: 'archived', archivedAt: new Date() }
                         })
                         break
+
                   case 'softDelete':
                         updatedComment = await prisma.comment.update({
                               where: { id },
                               data: { isDeleted: true }
                         })
                         break
+
                   case 'restoreDeleted':
                         updatedComment = await prisma.comment.update({
                               where: { id },
                               data: { isDeleted: false }
                         })
                         break
+
                   case 'hardDelete':
                         await prisma.$transaction(async (tx) => {
                               const commentId = id
 
-                              // 1. Yoruma ait tüm raporları sil
                               await tx.report.deleteMany({ where: { commentId } })
-
-                              // 2. Yoruma ait tüm oyları sil
                               await tx.commentVote.deleteMany({ where: { commentId } })
-
-                              // 3. Yoruma ait CommentVoteCount kaydını sil
                               await tx.commentVoteCount.deleteMany({ where: { commentId } })
 
-                              // 4. Alt yorumları bul ve işlemleri tekrarla
                               const childComments = await tx.comment.findMany({
                                     where: { parentCommentId: commentId }
                               })
@@ -85,12 +85,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                                     await tx.comment.delete({ where: { id: childComment.id } })
                               }
 
-                              // 5. Ana yorumu sil
                               const deletedComment = await tx.comment.delete({
                                     where: { id: commentId }
                               })
 
-                              // 6. Post'un yorum sayısını güncelle
                               await tx.post.update({
                                     where: { id: deletedComment.postId },
                                     data: { commentCount: { decrement: childComments.length + 1 } }
@@ -102,9 +100,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                   default:
                         return NextResponse.json({ error: 'Geçersiz işlem.' }, { status: 400 })
             }
+
+            return NextResponse.json(updatedComment)
       } catch (error) {
-            console.error('Yorum silinirken hata:', error)
-            return NextResponse.json({ error: 'Yorum silinirken hata oluştu.' }, { status: 500 })
+            console.error('Error processing request:', error)
+            return NextResponse.json({ error: 'İşlem başarısız.' }, { status: 500 })
       }
 }
 

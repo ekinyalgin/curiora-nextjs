@@ -108,11 +108,13 @@ export default function CommentActions({
             }
       }
 
-      const handleStatusChange = (newStatus: string) => {
-            if (newStatus === 'archived') {
-                  onStatusChange(newStatus, new Date())
-            } else {
-                  onStatusChange(newStatus, null)
+      const handleStatusChange = async (newStatus: string) => {
+            try {
+                  const archivedAt = newStatus === 'archived' ? new Date() : null
+                  await onStatusChange(newStatus, archivedAt)
+            } catch (error) {
+                  console.error('Error changing comment status:', error)
+                  alert('Failed to change comment status. Please try again.')
             }
       }
 

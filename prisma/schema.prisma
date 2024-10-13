@@ -168,8 +168,8 @@ model Comment {
   votes            CommentVote[]
   voteCount        CommentVoteCount?
   isDeleted        Boolean   @default(false) 
-  reports Report[]
-  reportCount Int     @default(0)
+  reports          Report[]
+  reportCount      Int       @default(0)
 }
 
 model Media {
@@ -206,7 +206,7 @@ model CommentVoteCount {
   downVotes  Int      @default(0)
   upVotes    Int      @default(0)
   lastUpdated DateTime @updatedAt
-  comment    Comment  @relation(fields: [commentId], references: [id])
+  comment    Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
 }
 
 model PostVote {
@@ -244,7 +244,6 @@ model Report {
   description String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
-  status      ReportStatus   @default(PENDING)
   reporterId  String
   reporter    User           @relation("ReporterReports", fields: [reporterId], references: [id])
   postId      Int?
@@ -255,10 +254,4 @@ model Report {
   @@index([postId])
   @@index([commentId])
   @@index([reporterId])
-}
-
-enum ReportStatus {
-  PENDING
-  APPROVED
-  REJECTED
 }

@@ -19,7 +19,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
       const session = await getServerSession(authOptions)
-      if (!session || session.user.role !== 'ADMIN') {
+      if (!session || session.user.role !== 1) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
@@ -54,19 +54,57 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                               data: { isDeleted: true }
                         })
                         break
-                  case 'hardDelete':
-                        updatedComment = await prisma.comment.delete({
-                              where: { id }
+                  case 'restoreDeleted':
+                        updatedComment = await prisma.comment.update({
+                              where: { id },
+                              data: { isDeleted: false }
                         })
                         break
-                  default:
-                        return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-            }
+                  case 'hardDelete':
+                        await prisma.$transaction(async (tx) => {
+                              const commentId = id
 
-            return NextResponse.json(updatedComment)
+                              // 1. Yoruma ait tüm raporları sil
+                              await tx.report.deleteMany({ where: { commentId } })
+
+                              // 2. Yoruma ait tüm oyları sil
+                              await tx.commentVote.deleteMany({ where: { commentId } })
+
+                              // 3. Yoruma ait CommentVoteCount kaydını sil
+                              await tx.commentVoteCount.deleteMany({ where: { commentId } })
+
+                              // 4. Alt yorumları bul ve işlemleri tekrarla
+                              const childComments = await tx.comment.findMany({
+                                    where: { parentCommentId: commentId }
+                              })
+
+                              for (const childComment of childComments) {
+                                    await tx.report.deleteMany({ where: { commentId: childComment.id } })
+                                    await tx.commentVote.deleteMany({ where: { commentId: childComment.id } })
+                                    await tx.commentVoteCount.deleteMany({ where: { commentId: childComment.id } })
+                                    await tx.comment.delete({ where: { id: childComment.id } })
+                              }
+
+                              // 5. Ana yorumu sil
+                              const deletedComment = await tx.comment.delete({
+                                    where: { id: commentId }
+                              })
+
+                              // 6. Post'un yorum sayısını güncelle
+                              await tx.post.update({
+                                    where: { id: deletedComment.postId },
+                                    data: { commentCount: { decrement: childComments.length + 1 } }
+                              })
+                        })
+
+                        return NextResponse.json({ message: 'Yorum başarıyla silindi.' })
+
+                  default:
+                        return NextResponse.json({ error: 'Geçersiz işlem.' }, { status: 400 })
+            }
       } catch (error) {
-            console.error('Error updating comment:', error)
-            return NextResponse.json({ error: 'Failed to update comment' }, { status: 500 })
+            console.error('Yorum silinirken hata:', error)
+            return NextResponse.json({ error: 'Yorum silinirken hata oluştu.' }, { status: 500 })
       }
 }
 

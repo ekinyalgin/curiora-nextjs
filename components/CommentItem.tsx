@@ -85,6 +85,7 @@ export default function CommentItem({
 
       const handleHardDelete = async () => {
             await onHardDelete(comment.id)
+            alert('Yorum kalıcı olarak silindi.')
       }
 
       const handleRestore = async () => {

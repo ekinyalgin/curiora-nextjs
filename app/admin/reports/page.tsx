@@ -3,9 +3,21 @@
 import { useState, useEffect } from 'react'
 import { AdminListLayout } from '@/components/ui/admin-list-layout'
 import { useSession } from 'next-auth/react'
-import { ReportStatus, ReportCategory } from '@prisma/client'
+import { ReportCategory } from '@prisma/client'
 import { ColumnDef } from '@tanstack/react-table'
-import { Check, X, Clock, ExternalLink, Archive, Trash, Skull, ToggleLeft, ToggleRight } from 'lucide-react'
+import {
+      Check,
+      X,
+      Clock,
+      ExternalLink,
+      Archive,
+      Trash,
+      Skull,
+      ToggleLeft,
+      ToggleRight,
+      AlertTriangle,
+      RefreshCw
+} from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
@@ -13,7 +25,6 @@ interface Report {
       id: string
       category: ReportCategory
       description: string
-      status: ReportStatus
       createdAt: string
       postId: string | null
       commentId: string | null
@@ -32,13 +43,14 @@ interface Report {
             id: string
             commentText: string
             status: 'pending' | 'approved' | 'archived'
+            isDeleted: boolean
       }
 }
 
 export default function ReportsPanel() {
       const { data: session, status } = useSession()
       const [reports, setReports] = useState<Report[]>([])
-      const [activeTab, setActiveTab] = useState<'post' | 'comment'>('post')
+      const [activeTab, setActiveTab] = useState<'comment' | 'post'>('comment')
 
       useEffect(() => {
             if (status !== 'loading') {
@@ -61,7 +73,7 @@ export default function ReportsPanel() {
 
       const handleCommentAction = async (
             commentId: string,
-            action: 'approve' | 'pending' | 'archive' | 'softDelete' | 'hardDelete'
+            action: 'approve' | 'pending' | 'archive' | 'softDelete' | 'hardDelete' | 'restoreDeleted'
       ) => {
             try {
                   const response = await fetch(`/api/comments/${commentId}`, {
@@ -91,6 +103,54 @@ export default function ReportsPanel() {
                   await fetchReports()
             } catch (error) {
                   console.error('Error updating post status:', error)
+            }
+      }
+
+      const handleReportAction = async (
+            reportId: string,
+            commentId: string,
+            action: 'approve' | 'pending' | 'archive' | 'softDelete' | 'hardDelete'
+      ) => {
+            try {
+                  await handleCommentAction(commentId, action)
+                  if (action === 'hardDelete') {
+                        await handleDeleteReport(reportId)
+                  }
+                  await fetchReports()
+            } catch (error) {
+                  console.error('Error updating comment status:', error)
+            }
+      }
+
+      const handleDeleteReport = async (reportId: string) => {
+            try {
+                  const response = await fetch(`/api/reports/${reportId}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' }
+                  })
+                  if (!response.ok) {
+                        throw new Error('Failed to delete report')
+                  }
+                  await fetchReports()
+            } catch (error) {
+                  console.error('Error deleting report:', error)
+            }
+      }
+
+      const handleHardDeleteConfirmation = async (reportId: string, commentId: string) => {
+            try {
+                  // Önce yorumu sil
+                  await handleCommentAction(commentId, 'hardDelete')
+
+                  // Biraz bekle
+                  await new Promise((resolve) => setTimeout(resolve, 1500))
+
+                  // Sonra raporu sil
+                  await handleDeleteReport(reportId)
+
+                  await fetchReports()
+            } catch (error) {
+                  console.error('Error hard deleting comment:', error)
             }
       }
 
@@ -153,6 +213,27 @@ export default function ReportsPanel() {
                                                 <ToggleLeft className="w-4 h-4 text-blue-600" />
                                           )}
                                     </button>
+                                    <button
+                                          onClick={() => handleReportAction(report.id, 'approve')}
+                                          className="p-1 rounded bg-green-100 hover:bg-green-200"
+                                          title="Approve Report"
+                                    >
+                                          <Check className="w-4 h-4 text-green-600" />
+                                    </button>
+                                    <button
+                                          onClick={() => handleReportAction(report.id, 'reject')}
+                                          className="p-1 rounded bg-red-100 hover:bg-red-200"
+                                          title="Reject Report"
+                                    >
+                                          <X className="w-4 h-4 text-red-600" />
+                                    </button>
+                                    <button
+                                          onClick={() => handleReportAction(report.id, 'delete')}
+                                          className="p-1 rounded bg-red-200 hover:bg-red-300"
+                                          title="Delete Report"
+                                    >
+                                          <Trash className="w-4 h-4 text-red-700" />
+                                    </button>
                               </div>
                         )
                   }
@@ -184,7 +265,24 @@ export default function ReportsPanel() {
             },
             {
                   accessorKey: 'status',
-                  header: 'Status'
+                  header: 'Status',
+                  cell: ({ row }) => {
+                        const comment = row.original.comment
+                        if (!comment) return null
+                        return (
+                              <span
+                                    className={
+                                          comment.status === 'approved'
+                                                ? 'text-green-600'
+                                                : comment.status === 'archived'
+                                                  ? 'text-red-600'
+                                                  : 'text-yellow-600'
+                                    }
+                              >
+                                    {comment.status}
+                              </span>
+                        )
+                  }
             },
             {
                   id: 'actions',
@@ -192,13 +290,16 @@ export default function ReportsPanel() {
                   cell: ({ row }) => {
                         const report = row.original
                         const commentStatus = report.comment?.status
+                        const isDeleted = report.comment?.isDeleted
+                        const [isHardDeleteConfirmation, setIsHardDeleteConfirmation] = useState(false)
+
                         return (
                               <div className="flex space-x-2">
                                     {commentStatus !== 'approved' && (
                                           <button
                                                 onClick={() => handleCommentAction(report.commentId!, 'approve')}
                                                 className="p-1 rounded bg-green-100 hover:bg-green-200"
-                                                title="Approve"
+                                                title="Approve Comment"
                                           >
                                                 <Check className="w-4 h-4 text-green-600" />
                                           </button>
@@ -207,7 +308,7 @@ export default function ReportsPanel() {
                                           <button
                                                 onClick={() => handleCommentAction(report.commentId!, 'pending')}
                                                 className="p-1 rounded bg-yellow-100 hover:bg-yellow-200"
-                                                title="Set to Pending"
+                                                title="Set Comment to Pending"
                                           >
                                                 <Clock className="w-4 h-4 text-yellow-600" />
                                           </button>
@@ -216,24 +317,53 @@ export default function ReportsPanel() {
                                           <button
                                                 onClick={() => handleCommentAction(report.commentId!, 'archive')}
                                                 className="p-1 rounded bg-gray-100 hover:bg-gray-200"
-                                                title="Archive"
+                                                title="Archive Comment"
                                           >
                                                 <Archive className="w-4 h-4 text-gray-600" />
                                           </button>
                                     )}
                                     <button
-                                          onClick={() => handleCommentAction(report.commentId!, 'softDelete')}
-                                          className="p-1 rounded bg-red-100 hover:bg-red-200"
-                                          title="Soft Delete"
+                                          onClick={() =>
+                                                handleCommentAction(
+                                                      report.commentId!,
+                                                      isDeleted ? 'restoreDeleted' : 'softDelete'
+                                                )
+                                          }
+                                          className={`p-1 rounded ${isDeleted ? 'bg-blue-100 hover:bg-blue-200' : 'bg-red-100 hover:bg-red-200'}`}
+                                          title={isDeleted ? 'Restore Deleted Comment' : 'Soft Delete Comment'}
                                     >
-                                          <Trash className="w-4 h-4 text-red-600" />
+                                          {isDeleted ? (
+                                                <RefreshCw className="w-4 h-4 text-blue-600" />
+                                          ) : (
+                                                <Trash className="w-4 h-4 text-red-600" />
+                                          )}
                                     </button>
                                     <button
-                                          onClick={() => handleCommentAction(report.commentId!, 'hardDelete')}
+                                          onClick={() => {
+                                                if (isHardDeleteConfirmation) {
+                                                      handleHardDeleteConfirmation(report.id, report.commentId!)
+                                                      setIsHardDeleteConfirmation(false)
+                                                } else {
+                                                      setIsHardDeleteConfirmation(true)
+                                                }
+                                          }}
                                           className="p-1 rounded bg-red-200 hover:bg-red-300"
-                                          title="Hard Delete"
+                                          title={
+                                                isHardDeleteConfirmation ? 'Confirm Hard Delete' : 'Hard Delete Comment'
+                                          }
                                     >
-                                          <Skull className="w-4 h-4 text-red-700" />
+                                          {isHardDeleteConfirmation ? (
+                                                <Check className="w-4 h-4 text-red-700" />
+                                          ) : (
+                                                <Skull className="w-4 h-4 text-red-700" />
+                                          )}
+                                    </button>
+                                    <button
+                                          onClick={() => handleDeleteReport(report.id)}
+                                          className="p-1 rounded bg-orange-100 hover:bg-orange-200"
+                                          title="Delete Report"
+                                    >
+                                          <AlertTriangle className="w-4 h-4 text-orange-600" />
                                     </button>
                               </div>
                         )
@@ -242,15 +372,15 @@ export default function ReportsPanel() {
       ]
 
       if (status === 'loading') return <div>Loading...</div>
-      if (!session) return <div>Access denied</div>
+      if (!session || session.user.role !== 1) return <div>Access denied</div>
 
       return (
             <div className="container mx-auto p-4">
                   <h1 className="text-2xl font-bold mb-4">Reports</h1>
-                  <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'post' | 'comment')}>
+                  <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'comment' | 'post')}>
                         <TabsList>
-                              <TabsTrigger value="post">Post Reports</TabsTrigger>
                               <TabsTrigger value="comment">Comment Reports</TabsTrigger>
+                              <TabsTrigger value="post">Post Reports</TabsTrigger>
                         </TabsList>
                         <TabsContent value="post">
                               <AdminListLayout

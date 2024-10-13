@@ -5,7 +5,7 @@ import { authOptions } from '../auth/[...nextauth]/route'
 
 export async function GET(req: Request) {
       const session = await getServerSession(authOptions)
-      if (!session) {
+      if (!session || session.user.role !== 1) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
@@ -34,14 +34,17 @@ export async function GET(req: Request) {
                                     reportCount: true,
                                     id: true,
                                     title: true,
-                                    slug: true
+                                    slug: true,
+                                    status: true
                               }
                         },
                         comment: {
                               select: {
                                     reportCount: true,
                                     id: true,
-                                    commentText: true
+                                    commentText: true,
+                                    status: true,
+                                    isDeleted: true
                               }
                         },
                         reporter: {

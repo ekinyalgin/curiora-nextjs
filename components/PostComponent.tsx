@@ -202,12 +202,14 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                         />
 
                         {isArchived && (
-                              <div
-                                    className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4"
-                                    role="alert"
-                              >
-                                    <p className="font-bold">Archived post</p>
-                                    <p>New comments cannot be posted and votes cannot be cast.</p>
+                              <div className="border border-yellow-700 text-yellow-700 p-4 rounded" role="alert">
+                                    <div className="text-sm flex items-center space-x-4">
+                                          <Archive className="w-8" />
+                                          <p>
+                                                This post has reached its archive status. Commenting and voting are no
+                                                longer possible.
+                                          </p>
+                                    </div>
                               </div>
                         )}
 

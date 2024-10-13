@@ -6,6 +6,7 @@ import CommentItem from './CommentItem'
 import SignInModal from './auth/SignInModal'
 import CommentSearch from './CommentSearch'
 import CommentSort from './CommentSort'
+import { Archive } from 'lucide-react'
 
 interface Comment {
       id: number
@@ -366,7 +367,12 @@ export default function CommentSection({
                               </button>
                         </form>
                   ) : isArchived ? (
-                        <p className="mb-6">This post is archived. New comments cannot be posted.</p>
+                        <div className="items-center flex space-x-4 border border-gray-300 p-4 mb-5">
+                              <Archive className="w-4 text-gray-400" />
+                              <p className=" text-sm text-gray-400">
+                                    This post is archived. New comments cannot be posted.
+                              </p>
+                        </div>
                   ) : (
                         <p className="mb-6">Please log in to leave a comment.</p>
                   )}

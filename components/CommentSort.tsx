@@ -5,7 +5,7 @@ interface CommentSortProps {
 
 export default function CommentSort({ onSort, currentSort }: CommentSortProps) {
       return (
-            <div className="flex items-center space-x-2">
+            <div className="text-sm flex items-center space-x-2">
                   <span>Sort by:</span>
                   <select
                         value={currentSort}

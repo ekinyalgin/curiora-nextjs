@@ -255,7 +255,9 @@ export default function CommentItem({
                               <>
                                     {comment.isDeleted ? (
                                           <div>
-                                                <p className="italic text-gray-500">This comment has been deleted.</p>
+                                                <p className="italic text-gray-500 text-sm">
+                                                      This comment has been deleted.
+                                                </p>
                                                 {isAdmin && (
                                                       <p className="text-sm text-gray-400 mt-1">
                                                             Original comment: {comment.commentText}

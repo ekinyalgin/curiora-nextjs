@@ -12,6 +12,7 @@ import {
       Trash2,
       X,
       CircleX,
+      Undo2,
       Flag
 } from 'lucide-react'
 import { Tooltip } from './ui/Tooltip'
@@ -198,26 +199,25 @@ export default function CommentActions({
                                           </Tooltip>
                                     </>
                               )}
+
+                              {isAdmin && isDeleted && (
+                                    <Tooltip content="Restore comment">
+                                          <button onClick={onRestore} className="text-emerald-500 text-sm">
+                                                <Undo2 strokeWidth={2} className="w-4" />
+                                          </button>
+                                    </Tooltip>
+                              )}
+                              {isSoftDeleteConfirm && (
+                                    <Tooltip content="Cancel Soft Delete">
+                                          <button
+                                                onClick={() => setIsSoftDeleteConfirm(false)}
+                                                className="text-gray-500 text-sm"
+                                          >
+                                                <X strokeWidth={3} className="w-4" />
+                                          </button>
+                                    </Tooltip>
+                              )}
                         </div>
-
-                        {isAdmin && isDeleted && (
-                              <Tooltip content="Restore comment">
-                                    <button onClick={onRestore} className="text-blue-500 text-sm">
-                                          <FaUndoAlt />
-                                    </button>
-                              </Tooltip>
-                        )}
-                        {isSoftDeleteConfirm && (
-                              <Tooltip content="Cancel Soft Delete">
-                                    <button
-                                          onClick={() => setIsSoftDeleteConfirm(false)}
-                                          className="text-gray-500 text-sm"
-                                    >
-                                          <X strokeWidth={3} className="w-4" />
-                                    </button>
-                              </Tooltip>
-                        )}
-
                         <div className="space-x-4 items-center flex">
                               {isAdmin && !isDeleted && (
                                     <>

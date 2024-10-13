@@ -152,25 +152,25 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                                                             <Settings2 className="w-4" />
                                                       </Link>
                                                 </Tooltip>
+                                                <Tooltip content="Archive">
+                                                      <button
+                                                            onClick={handleArchiveToggle}
+                                                            className={`text-xs ${
+                                                                  isArchived
+                                                                        ? 'bg-green-500 hover:bg-green-600'
+                                                                        : ' bg-yellow-400 hover:bg-yellow-500 '
+                                                            } transition text-white px-1 rounded-sm`}
+                                                      >
+                                                            {isArchived ? (
+                                                                  <Archive className="w-4" />
+                                                            ) : (
+                                                                  <ArchiveRestore className="w-4" />
+                                                            )}
+                                                      </button>
+                                                </Tooltip>
                                           </>
                                     )}
                                     <>
-                                          <Tooltip content="Archive">
-                                                <button
-                                                      onClick={handleArchiveToggle}
-                                                      className={`text-xs ${
-                                                            isArchived
-                                                                  ? 'bg-green-500 hover:bg-green-600'
-                                                                  : ' bg-yellow-400 hover:bg-yellow-500 '
-                                                      } transition text-white px-1 rounded-sm`}
-                                                >
-                                                      {isArchived ? (
-                                                            <Archive className="w-4" />
-                                                      ) : (
-                                                            <ArchiveRestore className="w-4" />
-                                                      )}
-                                                </button>
-                                          </Tooltip>
                                           <Tooltip content="Flag">
                                                 <Button
                                                       variant="none"

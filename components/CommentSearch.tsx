@@ -28,7 +28,7 @@ export default function CommentSearch({ onSearch }: CommentSearchProps) {
                         placeholder="Search comments..."
                         className="border rounded-full text-sm pl-10 py-2 pr-10"
                   />
-                  <button type="submit" className=" text-black absolute left-4">
+                  <button type="submit" className=" text-gray-700 absolute left-4">
                         <Search className="w-4" strokeWidth={1.5} />
                   </button>
                   {searchTerm && (

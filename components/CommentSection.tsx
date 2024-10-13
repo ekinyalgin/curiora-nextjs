@@ -352,17 +352,19 @@ export default function CommentSection({
 
       return (
             <section className="mt-8">
-                  <h2 className="text-2xl font-bold mb-4">Comments</h2>
                   {!isArchived && session ? (
-                        <form onSubmit={handleSubmit} className="mb-6">
+                        <form onSubmit={handleSubmit} className="mb-6 relative">
                               <textarea
                                     value={newComment}
                                     onChange={(e) => setNewComment(e.target.value)}
-                                    className="w-full p-2 border rounded-lg"
+                                    className="w-full p-2 border rounded-lg text-sm"
                                     rows={4}
                                     placeholder="Write a comment..."
                               />
-                              <button type="submit" className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg">
+                              <button
+                                    type="submit"
+                                    className="mt-2 px-3 py-2 text-xs absolute right-2 bottom-3 bg-blue-500 hover:bg-blue-600 transition text-white rounded-lg"
+                              >
                                     Submit Comment
                               </button>
                         </form>
@@ -378,8 +380,8 @@ export default function CommentSection({
                   )}
 
                   <div className="flex justify-between mb-4">
-                        <CommentSearch onSearch={handleSearch} />
                         <CommentSort onSort={handleSort} currentSort={sortOption} />
+                        <CommentSearch onSearch={handleSearch} />
                   </div>
 
                   {filteredComments.length > 0 ? (

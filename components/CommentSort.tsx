@@ -16,19 +16,16 @@ export default function CommentSort({ onSort, currentSort }: CommentSortProps) {
       ]
 
       return (
-            <div className="flex items-center">
+            <div className="flex items-center space-x-2">
                   <span className="text-sm">Sort by:</span>
                   <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                              <Button
-                                    variant="outline"
-                                    className="flex items-center text-sm border-none hover:bg-transparent text-black hover:text-gray-600"
-                              >
-                                    <div>{sortOptions.find((option) => option.value === currentSort)?.label}</div>
+                              <Button variant="outline" className="h-8 px-2 py-1">
+                                    {sortOptions.find((option) => option.value === currentSort)?.label}
                                     <ChevronDown className="ml-2 h-4 w-4" />
                               </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent side="bottom" align="start">
+                        <DropdownMenuContent>
                               {sortOptions.map((option) => (
                                     <DropdownMenuItem
                                           key={option.value}

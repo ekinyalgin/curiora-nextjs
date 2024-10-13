@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 
 interface CommentFormProps {
       onSubmit: (comment: string) => Promise<void>
@@ -10,7 +9,6 @@ export default function CommentForm({ onSubmit, isArchived }: CommentFormProps) 
       const [newComment, setNewComment] = useState('')
       const [isExpanded, setIsExpanded] = useState(false)
       const textareaRef = useRef<HTMLTextAreaElement>(null)
-      const formRef = useRef<HTMLFormElement>(null)
 
       useEffect(() => {
             adjustTextareaHeight()
@@ -46,56 +44,35 @@ export default function CommentForm({ onSubmit, isArchived }: CommentFormProps) 
       }
 
       return (
-            <motion.form
-                  ref={formRef}
-                  onSubmit={handleSubmit}
-                  className="mb-6 relative block rounded-lg border border-gray-600" // Formun tamamı görünür olsun
-                  style={{
-                        overflow: isExpanded ? 'visible' : 'hidden'
-                  }}
-                  initial={false}
-                  animate={{ height: isExpanded ? 'auto' : '40px' }}
-                  transition={{ duration: 0.3 }}
-            >
+            <form onSubmit={handleSubmit} className="mb-6 relative">
                   <textarea
                         ref={textareaRef}
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         onFocus={handleTextareaFocus}
-                        className={`w-full p-2 pl-3 border-none rounded-lg text-sm focus:outline-none resize-none text-black  ${
-                              isExpanded ? 'min-h-[90px]' : 'h-full'
+                        className={`w-full p-2 pl-3 border rounded-lg text-sm transition-all duration-300 ease-in-out resize-none ${
+                              isExpanded ? 'min-h-[90px]' : 'h-10'
                         }`}
                         placeholder="Write a comment..."
-                        style={{
-                              paddingBottom: isExpanded ? '2.5rem' : '0.5rem',
-                              height: isExpanded ? 'auto' : '40px' // textarea kapalıyken form içinde kalacak
-                        }}
+                        style={{ paddingBottom: isExpanded ? '2.5rem' : '0.5rem' }}
                   />
-
-                  <AnimatePresence>
-                        {isExpanded && (
-                              <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="absolute bottom-3 right-4 flex space-x-2"
+                  {isExpanded && (
+                        <div className="absolute bottom-3 right-3 flex space-x-2">
+                              <button
+                                    type="button"
+                                    onClick={handleCancel}
+                                    className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 transition"
                               >
-                                    <button
-                                          type="button"
-                                          onClick={handleCancel}
-                                          className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 transition"
-                                    >
-                                          Cancel
-                                    </button>
-                                    <button
-                                          type="submit"
-                                          className="px-2 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600 transition"
-                                    >
-                                          Submit
-                                    </button>
-                              </motion.div>
-                        )}
-                  </AnimatePresence>
-            </motion.form>
+                                    Cancel
+                              </button>
+                              <button
+                                    type="submit"
+                                    className="px-2 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600 transition"
+                              >
+                                    Submit
+                              </button>
+                        </div>
+                  )}
+            </form>
       )
 }

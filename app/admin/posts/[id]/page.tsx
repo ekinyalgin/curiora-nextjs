@@ -1,16 +1,17 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { AdminFormLayout } from '@/components/ui/admin-form-layout';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LanguageSelect } from '@/components/ui/language-select';
-import { FeaturedImageSelect } from '@/components/ui/featured-image-select';
-import { TagInput } from '@/components/ui/tag-input';
-import { SlugInput, createSlug } from '@/components/ui/slug-input';
-import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { AdminFormLayout } from '@/components/ui/admin-form-layout'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { LanguageSelect } from '@/components/ui/language-select'
+import { FeaturedImageSelect } from '@/components/ui/featured-image-select'
+import { TagInput } from '@/components/ui/tag-input'
+import { SlugInput, createSlug } from '@/components/ui/slug-input'
+import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils'
+import { PostContentEditor } from '@/components/PostContentEditor'
 
 export default function EditPost({ params }: { params: { id: string } }) {
       const [post, setPost] = useState({
@@ -25,60 +26,68 @@ export default function EditPost({ params }: { params: { id: string } }) {
             seoTitle: '',
             seoDescription: '',
             featuredImageId: null as number | null,
-            tags: [] as string[],
-      });
-      const [users, setUsers] = useState([]);
-      const [categories, setCategories] = useState([]);
-      const router = useRouter();
-      const id = parseInt(params.id);
+            tags: [] as string[]
+      })
+      const [users, setUsers] = useState([])
+      const [categories, setCategories] = useState([])
+      const [isLoading, setIsLoading] = useState(true)
+      const router = useRouter()
+      const id = parseInt(params.id)
 
       useEffect(() => {
-            fetchPost();
-            fetchUsers();
-            fetchCategories();
-      }, [id]);
+            const fetchData = async () => {
+                  setIsLoading(true)
+                  try {
+                        await Promise.all([fetchPost(), fetchUsers(), fetchCategories()])
+                  } catch (error) {
+                        console.error('Error fetching data:', error)
+                  } finally {
+                        setIsLoading(false)
+                  }
+            }
+            fetchData()
+      }, [id])
 
       async function fetchPost() {
-            const response = await fetch(`/api/posts/${id}`);
+            const response = await fetch(`/api/posts/${id}`)
             if (!response.ok) {
-                  console.error('Failed to fetch post');
-                  return;
+                  throw new Error('Failed to fetch post')
             }
-            const data = await response.json();
+            const data = await response.json()
             setPost({
                   ...data,
                   userId: data.user.id,
                   categoryId: data.category.id.toString(),
                   languageId: data.language.id.toString(),
                   featuredImageId: data.featuredImageId,
-                  tags: data.tags ? data.tags.map((tag: { name: string }) => tag.name) : [],
-            });
+                  tags: data.tags ? data.tags.map((tag: { name: string }) => tag.name) : []
+            })
       }
 
       async function fetchUsers() {
-            const response = await fetch('/api/users');
-            const data = await response.json();
-            setUsers(data);
+            const response = await fetch('/api/users')
+            const data = await response.json()
+            setUsers(data)
       }
 
       async function fetchCategories() {
-            const response = await fetch('/api/categories');
-            const data = await response.json();
-            setCategories(data);
+            const response = await fetch('/api/categories')
+            const data = await response.json()
+            setCategories(data)
       }
 
       const handleSubmit = async (e: React.FormEvent) => {
-            e.preventDefault();
+            e.preventDefault()
             try {
-                  let postToSubmit = { ...post };
+                  let postToSubmit = { ...post }
                   if (!postToSubmit.slug) {
-                        postToSubmit.slug = createSlug(postToSubmit.title);
+                        postToSubmit.slug = createSlug(postToSubmit.title)
                   }
 
                   // Slug benzersizliğini kontrol et
-                  const isUnique = await checkSlugUniqueness(postToSubmit.slug, 'post', id);
+                  const isUnique = await checkSlugUniqueness(postToSubmit.slug, 'post', id)
                   if (!isUnique) {
-                        postToSubmit.slug = await generateUniqueSlug(postToSubmit.slug, 'post', id);
+                        postToSubmit.slug = await generateUniqueSlug(postToSubmit.slug, 'post', id)
                   }
 
                   const response = await fetch(`/api/posts/${id}`, {
@@ -88,32 +97,36 @@ export default function EditPost({ params }: { params: { id: string } }) {
                               ...postToSubmit,
                               user: { id: postToSubmit.userId },
                               category: { id: postToSubmit.categoryId },
-                              language: { id: postToSubmit.languageId },
-                        }),
-                  });
+                              language: { id: postToSubmit.languageId }
+                        })
+                  })
 
                   if (!response.ok) {
-                        throw new Error('Failed to update post');
+                        throw new Error('Failed to update post')
                   }
 
-                  router.push('/admin/posts');
+                  router.push('/admin/posts')
             } catch (err) {
-                  console.error('Error updating post:', err);
-                  alert('Failed to update post. Please try again.');
+                  console.error('Error updating post:', err)
+                  alert('Failed to update post. Please try again.')
             }
-      };
+      }
 
       const handleInputChange = (name: string, value: string) => {
-            setPost((prev) => ({ ...prev, [name]: value }));
-      };
+            setPost((prev) => ({ ...prev, [name]: value }))
+      }
 
       const handleFeaturedImageSelect = (imageId: number | null) => {
-            setPost((prev) => ({ ...prev, featuredImageId: imageId }));
-      };
+            setPost((prev) => ({ ...prev, featuredImageId: imageId }))
+      }
 
       const handleTagsChange = (newTags: string[]) => {
-            setPost((prev) => ({ ...prev, tags: newTags }));
-      };
+            setPost((prev) => ({ ...prev, tags: newTags }))
+      }
+
+      if (isLoading) {
+            return <div>Loading...</div>
+      }
 
       return (
             <AdminFormLayout title="Edit Post" backLink="/admin/posts" onSubmit={handleSubmit} submitText="Update Post">
@@ -134,17 +147,15 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         placeholder="Enter slug or leave empty to generate automatically"
                         autoGenerate={false}
                   />
-                  <Textarea
-                        name="content"
-                        label="Content"
+                  <PostContentEditor
                         value={post.content}
-                        onChange={(e) => handleInputChange('content', e.target.value)}
+                        onChange={(value) => handleInputChange('content', value)}
                         placeholder="Enter post content"
-                        required
                   />
                   <Select
                         value={post.status}
-                        onValueChange={(value) => setPost((prev) => ({ ...prev, status: value }))}>
+                        onValueChange={(value) => setPost((prev) => ({ ...prev, status: value }))}
+                  >
                         <SelectTrigger>
                               <SelectValue placeholder="Select post status" />
                         </SelectTrigger>
@@ -165,7 +176,8 @@ export default function EditPost({ params }: { params: { id: string } }) {
                   </Select>
                   <Select
                         value={post.userId}
-                        onValueChange={(value) => setPost((prev) => ({ ...prev, userId: value }))}>
+                        onValueChange={(value) => setPost((prev) => ({ ...prev, userId: value }))}
+                  >
                         <SelectTrigger>
                               <SelectValue placeholder="Select user" />
                         </SelectTrigger>
@@ -179,7 +191,8 @@ export default function EditPost({ params }: { params: { id: string } }) {
                   </Select>
                   <Select
                         value={post.categoryId}
-                        onValueChange={(value) => setPost((prev) => ({ ...prev, categoryId: value }))}>
+                        onValueChange={(value) => setPost((prev) => ({ ...prev, categoryId: value }))}
+                  >
                         <SelectTrigger>
                               <SelectValue placeholder="Select category" />
                         </SelectTrigger>
@@ -212,5 +225,5 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         placeholder="Enter SEO description"
                   />
             </AdminFormLayout>
-      );
+      )
 }

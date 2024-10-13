@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import SignInModal from './auth/SignInModal'
-import { FaEdit, FaTrash, FaCheck, FaTimes, FaArchive, FaClock, FaUndoAlt } from 'react-icons/fa'
 import {
       ClockArrowDown,
       Archive,
       Check,
       MessageSquareReply,
       Settings2,
-      Trash,
       Trash2,
       X,
       CircleX,
@@ -96,7 +94,28 @@ export default function CommentActions({
       }
 
       const confirmSoftDelete = async () => {
-            await onSoftDelete()
+            try {
+                  const response = await fetch(`/api/comments/${commentId}/edit`, {
+                        method: 'PUT',
+                        headers: {
+                              'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ action: 'softDelete' })
+                  })
+
+                  if (!response.ok) {
+                        throw new Error('Failed to soft delete comment')
+                  }
+
+                  await onSoftDelete()
+                  setIsSoftDeleteConfirm(false)
+            } catch (error) {
+                  console.error('Error soft deleting comment:', error)
+                  alert('Failed to soft delete comment. Please try again.')
+            }
+      }
+
+      const cancelSoftDelete = () => {
             setIsSoftDeleteConfirm(false)
       }
 
@@ -152,29 +171,33 @@ export default function CommentActions({
                   )}
                   <div className="flex items-center mt-4 justify-between">
                         <div className="flex items-center space-x-4">
-                              <VoteComponent
-                                    itemId={commentId}
-                                    itemType="comment"
-                                    initialUpVotes={initialUpVotes}
-                                    initialDownVotes={initialDownVotes}
-                                    userVote={userVote}
-                                    onVote={onVote}
-                                    isDisabled={isArchived}
-                              />
+                              {!isDeleted && (
+                                    <>
+                                          <VoteComponent
+                                                itemId={commentId}
+                                                itemType="comment"
+                                                initialUpVotes={initialUpVotes}
+                                                initialDownVotes={initialDownVotes}
+                                                userVote={userVote}
+                                                onVote={onVote}
+                                                isDisabled={isArchived}
+                                          />
 
-                              {!isDeleted && !isArchived && (
-                                    <Tooltip content="Reply">
-                                          <button onClick={handleReply} className="text-black text-sm">
-                                                <MessageSquareReply className="w-4" />
-                                          </button>
-                                    </Tooltip>
+                                          {!isArchived && (
+                                                <Tooltip content="Reply">
+                                                      <button onClick={handleReply} className="text-black text-sm">
+                                                            <MessageSquareReply className="w-4" />
+                                                      </button>
+                                                </Tooltip>
+                                          )}
+
+                                          <Tooltip content="Report Comment">
+                                                <Button variant="none" onClick={() => setIsReportModalOpen(true)}>
+                                                      <Flag className="w-4" />
+                                                </Button>
+                                          </Tooltip>
+                                    </>
                               )}
-
-                              <Tooltip content="Report Comment">
-                                    <Button variant="none" onClick={() => setIsReportModalOpen(true)}>
-                                          <Flag className="w-4" />
-                                    </Button>
-                              </Tooltip>
 
                               {canEditDelete && !isDeleted && (
                                     <>
@@ -184,19 +207,31 @@ export default function CommentActions({
                                                 </button>
                                           </Tooltip>
 
-                                          <Tooltip content="Soft Delete">
-                                                <button onClick={handleSoftDelete} className="text-red-500 w-4">
+                                          <Tooltip content={isSoftDeleteConfirm ? 'Confirm Delete' : 'Soft Delete'}>
+                                                <button
+                                                      onClick={
+                                                            isSoftDeleteConfirm ? confirmSoftDelete : handleSoftDelete
+                                                      }
+                                                      className="text-red-500 w-4"
+                                                >
                                                       {isSoftDeleteConfirm ? (
-                                                            <Check
-                                                                  className="w-4 text-green-500"
-                                                                  strokeWidth={4}
-                                                                  onClick={confirmSoftDelete}
-                                                            />
+                                                            <Check className="w-4 text-green-500" strokeWidth={4} />
                                                       ) : (
                                                             <Trash2 className="w-4" />
                                                       )}
                                                 </button>
                                           </Tooltip>
+
+                                          {isSoftDeleteConfirm && (
+                                                <Tooltip content="Cancel Delete">
+                                                      <button
+                                                            onClick={cancelSoftDelete}
+                                                            className="text-gray-500 text-sm"
+                                                      >
+                                                            <X strokeWidth={3} className="w-4" />
+                                                      </button>
+                                                </Tooltip>
+                                          )}
                                     </>
                               )}
 
@@ -204,16 +239,6 @@ export default function CommentActions({
                                     <Tooltip content="Restore comment">
                                           <button onClick={onRestore} className="text-emerald-500 text-sm">
                                                 <Undo2 strokeWidth={2} className="w-4" />
-                                          </button>
-                                    </Tooltip>
-                              )}
-                              {isSoftDeleteConfirm && (
-                                    <Tooltip content="Cancel Soft Delete">
-                                          <button
-                                                onClick={() => setIsSoftDeleteConfirm(false)}
-                                                className="text-gray-500 text-sm"
-                                          >
-                                                <X strokeWidth={3} className="w-4" />
                                           </button>
                                     </Tooltip>
                               )}

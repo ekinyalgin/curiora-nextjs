@@ -111,7 +111,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
       const session = await getServerSession(authOptions)
 
-      if (!session || (session.user.role !== 'admin' && session.user.role !== 1)) {
+      if (!session) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
@@ -120,17 +120,40 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       const { status, isDeleted, archivedAt } = body
 
       try {
+            // Önce yorumu veritabanından al
+            const comment = await prisma.comment.findUnique({ where: { id } })
+
+            if (!comment) {
+                  return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
+            }
+
+            // Kullanıcının yetkisini kontrol et
+            const isAdmin = session.user.role === 'admin' || session.user.role === 1
+            const isCommentOwner = session.user.id === comment.userId
+
+            // Sadece admin veya yorum sahibi işlem yapabilir
+            if (!isAdmin && !isCommentOwner) {
+                  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+            }
+
+            // Admin tüm işlemleri yapabilir, yorum sahibi sadece soft delete yapabilir
+            const updateData: any = {}
+
+            if (isAdmin) {
+                  if (status) {
+                        updateData.status = status as 'pending' | 'approved' | 'archived'
+                        updateData.archivedAt =
+                              status === 'archived' ? (archivedAt ? new Date(archivedAt) : new Date()) : null
+                  }
+            }
+
+            if (isDeleted !== undefined && (isAdmin || isCommentOwner)) {
+                  updateData.isDeleted = isDeleted
+            }
+
             const updatedComment = await prisma.comment.update({
                   where: { id },
-                  data: {
-                        ...(status && {
-                              status: status as 'pending' | 'approved' | 'archived',
-                              // Eğer status 'archived' değilse, archivedAt'i null yap
-                              archivedAt:
-                                    status === 'archived' ? (archivedAt ? new Date(archivedAt) : new Date()) : null
-                        }),
-                        ...(isDeleted !== undefined && { isDeleted })
-                  },
+                  data: updateData,
                   include: { user: true }
             })
 

@@ -19,8 +19,8 @@ interface CommentItemProps {
       onDelete: (commentId: number) => Promise<void>
       onStatusChange: (commentId: number, newStatus: string, archivedAt?: Date) => Promise<void>
       onSoftDelete: (commentId: number) => Promise<void>
-      onHardDelete: (commentId: number) => Promise<void>
       onRestore: (commentId: number) => Promise<void>
+      onHardDelete: (commentId: number) => Promise<void>
       isChild?: boolean
       topLevelParentId?: number
       activeTextarea: string | null
@@ -38,8 +38,8 @@ export default function CommentItem({
       onDelete,
       onStatusChange,
       onSoftDelete,
-      onHardDelete,
       onRestore,
+      onHardDelete,
       isChild = false,
       topLevelParentId,
       activeTextarea,
@@ -83,14 +83,19 @@ export default function CommentItem({
             await onSoftDelete(comment.id)
       }
 
-      const handleHardDelete = async () => {
-            await onHardDelete(comment.id)
-            alert('Yorum kalıcı olarak silindi.')
-      }
-
       const handleRestore = async () => {
             await onRestore(comment.id)
             updateComment(comment.id, { ...comment, isDeleted: false })
+      }
+
+      const handleHardDelete = async () => {
+            if (
+                  window.confirm(
+                        'Are you sure you want to permanently delete this comment? This action cannot be undone.'
+                  )
+            ) {
+                  await onHardDelete(comment.id)
+            }
       }
 
       const canEditDelete = isAdmin || (session && session.user.id === comment.userId)
@@ -228,8 +233,8 @@ export default function CommentItem({
                                           onDelete={handleDelete}
                                           onStatusChange={handleStatusChange}
                                           onSoftDelete={handleSoftDelete}
-                                          onHardDelete={handleHardDelete}
                                           onRestore={handleRestore}
+                                          onHardDelete={handleHardDelete}
                                           commentText={comment.commentText}
                                           canEditDelete={canEditDelete}
                                           isAdmin={isAdmin}
@@ -284,8 +289,8 @@ export default function CommentItem({
                                                 onDelete={onDelete}
                                                 onStatusChange={onStatusChange}
                                                 onSoftDelete={onSoftDelete}
-                                                onHardDelete={onHardDelete}
                                                 onRestore={onRestore}
+                                                onHardDelete={onHardDelete}
                                                 isChild={true}
                                                 topLevelParentId={isChild ? topLevelParentId : comment.id}
                                                 activeTextarea={activeTextarea}

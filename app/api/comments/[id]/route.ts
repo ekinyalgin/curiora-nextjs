@@ -144,33 +144,45 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
       const session = await getServerSession(authOptions)
 
-      if (!session) {
+      if (!session || session.user.role !== 1) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
       const id = parseInt(params.id)
 
       try {
-            const comment = await prisma.comment.findUnique({
-                  where: { id },
-                  include: { childComments: true }
-            })
+            await prisma.$transaction(async (tx) => {
+                  // 1. Delete all reports associated with the comment
+                  await tx.report.deleteMany({ where: { commentId: id } })
 
-            if (!comment) {
-                  return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
-            }
+                  // 2. Delete all votes associated with the comment
+                  await tx.commentVote.deleteMany({ where: { commentId: id } })
 
-            const totalComments = 1 + comment.childComments.length // Parent + children
+                  // 3. Delete the comment's vote count
+                  await tx.commentVoteCount.deleteMany({ where: { commentId: id } })
 
-            const [deletedComment, updatedPost] = await prisma.$transaction([
-                  prisma.comment.delete({
-                        where: { id }
-                  }),
-                  prisma.post.update({
-                        where: { id: comment.postId },
-                        data: { commentCount: { decrement: totalComments } }
+                  // 4. Find and delete all child comments recursively
+                  const deleteChildComments = async (parentId: number) => {
+                        const childComments = await tx.comment.findMany({ where: { parentCommentId: parentId } })
+                        for (const childComment of childComments) {
+                              await tx.report.deleteMany({ where: { commentId: childComment.id } })
+                              await tx.commentVote.deleteMany({ where: { commentId: childComment.id } })
+                              await tx.commentVoteCount.deleteMany({ where: { commentId: childComment.id } })
+                              await deleteChildComments(childComment.id)
+                              await tx.comment.delete({ where: { id: childComment.id } })
+                        }
+                  }
+                  await deleteChildComments(id)
+
+                  // 5. Delete the main comment
+                  const deletedComment = await tx.comment.delete({ where: { id } })
+
+                  // 6. Update the post's comment count
+                  await tx.post.update({
+                        where: { id: deletedComment.postId },
+                        data: { commentCount: { decrement: 1 } }
                   })
-            ])
+            })
 
             return NextResponse.json({ message: 'Comment and its replies deleted successfully' })
       } catch (error) {

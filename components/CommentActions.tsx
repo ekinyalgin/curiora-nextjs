@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import SignInModal from './auth/SignInModal'
-import { FaEdit, FaTrash, FaCheck, FaTimes, FaArchive, FaClock, FaSkull, FaUndoAlt } from 'react-icons/fa'
+import { FaEdit, FaTrash, FaCheck, FaTimes, FaArchive, FaClock, FaUndoAlt, FaTrashAlt } from 'react-icons/fa'
 
 interface CommentActionsProps {
       onReply: (text: string) => Promise<void>
       onEdit: () => void
       onSoftDelete: () => Promise<void>
-      onHardDelete: () => Promise<void>
       onRestore: () => Promise<void>
       onStatusChange: (newStatus: string, archivedAt?: Date) => Promise<void>
+      onHardDelete: () => Promise<void>
       commentText: string
       canEditDelete: boolean
       isAdmin: boolean
@@ -25,9 +25,9 @@ export default function CommentActions({
       onReply,
       onEdit,
       onSoftDelete,
-      onHardDelete,
       onRestore,
       onStatusChange,
+      onHardDelete,
       commentText,
       canEditDelete,
       isAdmin,
@@ -40,7 +40,6 @@ export default function CommentActions({
 }: CommentActionsProps) {
       const { data: session } = useSession()
       const [isSoftDeleteConfirm, setIsSoftDeleteConfirm] = useState(false)
-      const [isHardDeleteConfirm, setIsHardDeleteConfirm] = useState(false)
       const [replyText, setReplyText] = useState('')
       const [showSignInModal, setShowSignInModal] = useState(false)
 
@@ -69,20 +68,11 @@ export default function CommentActions({
             setIsSoftDeleteConfirm(false)
       }
 
-      const handleHardDelete = () => {
-            setIsHardDeleteConfirm(true)
-      }
-
-      const confirmHardDelete = async () => {
-            await onHardDelete()
-            setIsHardDeleteConfirm(false)
-      }
-
       const handleStatusChange = (newStatus: string) => {
             if (newStatus === 'archived') {
                   onStatusChange(newStatus, new Date())
             } else {
-                  onStatusChange(newStatus, null) // archivedAt'i null olarak gönder
+                  onStatusChange(newStatus, null)
             }
       }
 
@@ -103,34 +93,14 @@ export default function CommentActions({
                               </button>
                         </>
                   )}
-                  {isAdmin && (
-                        <>
-                              {isDeleted ? (
-                                    <>
-                                          <button onClick={onRestore} className="text-blue-500 text-sm mt-2 mr-2">
-                                                <FaUndoAlt />
-                                          </button>
-                                          <button onClick={handleHardDelete} className="text-red-700 text-sm mt-2 mr-2">
-                                                {isHardDeleteConfirm ? (
-                                                      <FaCheck onClick={confirmHardDelete} />
-                                                ) : (
-                                                      <FaSkull />
-                                                )}
-                                          </button>
-                                    </>
-                              ) : (
-                                    <button onClick={handleHardDelete} className="text-red-700 text-sm mt-2 mr-2">
-                                          {isHardDeleteConfirm ? <FaCheck onClick={confirmHardDelete} /> : <FaSkull />}
-                                    </button>
-                              )}
-                        </>
+                  {isAdmin && isDeleted && (
+                        <button onClick={onRestore} className="text-blue-500 text-sm mt-2 mr-2">
+                              <FaUndoAlt />
+                        </button>
                   )}
-                  {(isSoftDeleteConfirm || isHardDeleteConfirm) && (
+                  {isSoftDeleteConfirm && (
                         <button
-                              onClick={() => {
-                                    setIsSoftDeleteConfirm(false)
-                                    setIsHardDeleteConfirm(false)
-                              }}
+                              onClick={() => setIsSoftDeleteConfirm(false)}
                               className="text-gray-500 text-sm mt-2 mr-2"
                         >
                               <FaTimes />
@@ -187,6 +157,12 @@ export default function CommentActions({
                                     </>
                               )}
                         </>
+                  )}
+
+                  {isAdmin && (
+                        <button onClick={onHardDelete} className="text-red-700 text-sm mt-2 mr-2">
+                              <FaTrashAlt />
+                        </button>
                   )}
 
                   {isActiveTextarea && (

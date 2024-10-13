@@ -6,6 +6,7 @@ import CommentItem from './CommentItem'
 import SignInModal from './auth/SignInModal'
 import CommentSearch from './CommentSearch'
 import CommentSort from './CommentSort'
+import CommentForm from './CommentForm'
 import { Archive } from 'lucide-react'
 
 interface Comment {
@@ -35,7 +36,6 @@ export default function CommentSection({
       isArchived
 }: CommentSectionProps) {
       const { data: session } = useSession()
-      const [newComment, setNewComment] = useState('')
       const [comments, setComments] = useState<Comment[]>([])
       const [filteredComments, setFilteredComments] = useState<Comment[]>([])
       const [showSignInModal, setShowSignInModal] = useState(false)
@@ -59,13 +59,11 @@ export default function CommentSection({
             }))
       }
 
-      const handleSubmit = async (e: React.FormEvent) => {
-            e.preventDefault()
+      const handleNewComment = async (newComment: string) => {
             if (!session) {
                   setShowSignInModal(true)
                   return
             }
-            if (!newComment.trim()) return
 
             try {
                   const response = await fetch('/api/comments', {
@@ -88,7 +86,6 @@ export default function CommentSection({
                   const savedComment = await response.json()
                   setComments([savedComment, ...comments])
                   setFilteredComments([savedComment, ...filteredComments])
-                  setNewComment('')
             } catch (error) {
                   console.error('Error submitting comment:', error)
                   alert('Failed to submit comment. Please try again.')
@@ -353,25 +350,11 @@ export default function CommentSection({
       return (
             <section className="mt-8">
                   {!isArchived && session ? (
-                        <form onSubmit={handleSubmit} className="mb-6 relative">
-                              <textarea
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    className="w-full p-2 border rounded-lg text-sm"
-                                    rows={4}
-                                    placeholder="Write a comment..."
-                              />
-                              <button
-                                    type="submit"
-                                    className="mt-2 px-3 py-2 text-xs absolute right-2 bottom-3 bg-blue-500 hover:bg-blue-600 transition text-white rounded-lg"
-                              >
-                                    Submit Comment
-                              </button>
-                        </form>
+                        <CommentForm onSubmit={handleNewComment} isArchived={isArchived} />
                   ) : isArchived ? (
                         <div className="items-center flex space-x-4 border border-gray-300 p-4 mb-5">
                               <Archive className="w-4 text-gray-400" />
-                              <p className=" text-sm text-gray-400">
+                              <p className="text-sm text-gray-400">
                                     This post is archived. New comments cannot be posted.
                               </p>
                         </div>

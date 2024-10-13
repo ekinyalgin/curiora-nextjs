@@ -376,29 +376,40 @@ export default function CommentSection({
                         <CommentSort onSort={handleSort} currentSort={sortOption} />
                   </div>
 
-                  {filteredComments.map((comment) => (
-                        <CommentItem
-                              key={comment.id}
-                              comment={comment}
-                              postId={postId}
-                              onReply={handleReply}
-                              onEdit={handleEdit}
-                              onSoftDelete={handleSoftDelete}
-                              onHardDelete={handleHardDelete}
-                              onRestore={handleRestore}
-                              onStatusChange={handleStatusChange}
-                              activeTextarea={activeTextarea}
-                              setActiveTextarea={setActiveTextarea}
-                              isAdmin={isAdmin}
-                              isArchived={isArchived}
-                              updateComment={(commentId, updatedComment) => {
-                                    setComments((prevComments) => updateCommentInList(prevComments, updatedComment))
-                                    setFilteredComments((prevComments) =>
-                                          updateCommentInList(prevComments, updatedComment)
-                                    )
-                              }}
-                        />
-                  ))}
+                  {filteredComments.length > 0 ? (
+                        filteredComments.map((comment) => (
+                              <CommentItem
+                                    key={comment.id}
+                                    comment={comment}
+                                    postId={postId}
+                                    onReply={handleReply}
+                                    onEdit={handleEdit}
+                                    onSoftDelete={handleSoftDelete}
+                                    onHardDelete={handleHardDelete}
+                                    onRestore={handleRestore}
+                                    onStatusChange={handleStatusChange}
+                                    activeTextarea={activeTextarea}
+                                    setActiveTextarea={setActiveTextarea}
+                                    isAdmin={isAdmin}
+                                    isArchived={isArchived}
+                                    updateComment={(commentId, updatedComment) => {
+                                          setComments((prevComments) =>
+                                                updateCommentInList(prevComments, updatedComment)
+                                          )
+                                          setFilteredComments((prevComments) =>
+                                                updateCommentInList(prevComments, updatedComment)
+                                          )
+                                    }}
+                              />
+                        ))
+                  ) : (
+                        <div className="text-center py-8">
+                              <p className="text-lg text-gray-600">No comments yet.</p>
+                              {!isArchived && (
+                                    <p className="text-md text-blue-500 mt-2">Be the first to share your thoughts!</p>
+                              )}
+                        </div>
+                  )}
 
                   <SignInModal isOpen={showSignInModal} onClose={() => setShowSignInModal(false)} />
             </section>

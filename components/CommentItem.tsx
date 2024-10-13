@@ -183,25 +183,25 @@ export default function CommentItem({
 
       return (
             <div className={`mb-4 ${isChild ? 'ml-10' : ''}`}>
-                  <div className={`bg-gray-100 p-4 rounded-lg ${getCommentStyle()}`}>
+                  <div className={`bg-gray-50 p-4 rounded-lg ${getCommentStyle()}`}>
                         <ReportModal type="comment" id={comment.id} />
                         <div className="flex items-center space-x-2 mb-2">
                               {comment.user.image ? (
                                     <Image
                                           src={comment.user.image}
                                           alt={comment.user.name}
-                                          width={40}
-                                          height={40}
+                                          width={20}
+                                          height={20}
                                           className="rounded-full"
                                     />
                               ) : (
-                                    <Avatar name={comment.user.name} size="40" round={true} textSizeRatio={3} />
+                                    <Avatar name={comment.user.name} size="26" round={true} textSizeRatio={3} />
                               )}
-                              <div>
-                                    <div className="font-bold">{comment.user.name}</div>
-                                    <div className="text-sm text-gray-600">
-                                          <RelativeDate date={comment.createdAt} />
-                                    </div>
+
+                              <div className="font-semibold text-sm">{comment.user.name}</div>
+                              <div className="text-sm text-gray-300">|</div>
+                              <div className="text-xs text-gray-500">
+                                    <RelativeDate date={comment.createdAt} />
                               </div>
                         </div>
                         {activeTextarea === `edit-${comment.id}` ? (
@@ -237,7 +237,7 @@ export default function CommentItem({
                                                 )}
                                           </div>
                                     ) : (
-                                          <p>{comment.commentText}</p>
+                                          <p className="text-sm">{comment.commentText}</p>
                                     )}
                                     <CommentActions
                                           onReply={handleReply}

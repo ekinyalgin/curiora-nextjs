@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import SignInModal from './auth/SignInModal'
 import { FaEdit, FaTrash, FaCheck, FaTimes, FaArchive, FaClock, FaUndoAlt } from 'react-icons/fa'
-import { Trash } from 'lucide-react'
+import { ClockArrowDown, Archive, Check, MessageSquareReply, Settings2, Trash, Trash2, X, Bomb } from 'lucide-react'
 import { Tooltip } from './ui/Tooltip'
 import { Button } from './ui/button'
 
@@ -80,24 +80,32 @@ export default function CommentActions({
       }
 
       return (
-            <div>
+            <div className="flex items-center space-x-2">
                   {!isDeleted && !isArchived && (
-                        <Tooltip content="Reply to this comment">
-                              <button onClick={handleReply} className="text-blue-500 text-sm mt-2 mr-2">
-                                    Reply
+                        <Tooltip content="Reply">
+                              <button onClick={handleReply} className="text-black text-sm mt-2">
+                                    <MessageSquareReply className="w-4" />
                               </button>
                         </Tooltip>
                   )}
                   {canEditDelete && !isDeleted && (
                         <>
-                              <Tooltip content="Edit comment">
-                                    <button onClick={onEdit} className="text-green-500 text-sm mt-2 mr-2">
-                                          <FaEdit />
+                              <Tooltip content="Edit Comment">
+                                    <button onClick={onEdit} className="text-black text-sm mt-2">
+                                          <Settings2 className="w-4" />
                                     </button>
                               </Tooltip>
-                              <Tooltip content="Soft delete comment">
-                                    <button onClick={handleSoftDelete} className="text-red-500 text-sm mt-2 mr-2">
-                                          {isSoftDeleteConfirm ? <FaCheck onClick={confirmSoftDelete} /> : <FaTrash />}
+                              <Tooltip content="Soft Delete">
+                                    <button onClick={handleSoftDelete} className="mx-10 text-red-500 text-sm w-4 mt-2">
+                                          {isSoftDeleteConfirm ? (
+                                                <Check
+                                                      className="w-4 text-green-500"
+                                                      strokeWidth={4}
+                                                      onClick={confirmSoftDelete}
+                                                />
+                                          ) : (
+                                                <Trash2 className="w-4" />
+                                          )}
                                     </button>
                               </Tooltip>
                         </>
@@ -110,12 +118,12 @@ export default function CommentActions({
                         </Tooltip>
                   )}
                   {isSoftDeleteConfirm && (
-                        <Tooltip content="Cancel soft delete">
+                        <Tooltip content="Cancel Soft Delete">
                               <button
                                     onClick={() => setIsSoftDeleteConfirm(false)}
                                     className="text-gray-500 text-sm mt-2 mr-2"
                               >
-                                    <FaTimes />
+                                    <X strokeWidth={3} className="w-4" />
                               </button>
                         </Tooltip>
                   )}
@@ -123,60 +131,66 @@ export default function CommentActions({
                         <>
                               {status === 'pending' && (
                                     <>
-                                          <Tooltip content="Approve comment">
+                                          <Tooltip content="Approve">
                                                 <button
                                                       onClick={() => handleStatusChange('approved')}
-                                                      className="text-green-500 text-sm mt-2 mr-2"
+                                                      className="text-black flex items-center space-x-1"
                                                 >
-                                                      <FaCheck />
+                                                      <Check className="w-4" />{' '}
+                                                      <span className="text-gray-400 text-xs">Approve</span>
                                                 </button>
                                           </Tooltip>
-                                          <Tooltip content="Archive comment">
+                                          <Tooltip content="Archive">
                                                 <button
                                                       onClick={() => handleStatusChange('archived')}
-                                                      className="text-gray-500 text-sm mt-2 mr-2"
+                                                      className="text-black flex items-center space-x-1"
                                                 >
-                                                      <FaArchive />
+                                                      <Archive className="w-4" />{' '}
+                                                      <span className="text-gray-400 text-xs">Archive</span>
                                                 </button>
                                           </Tooltip>
                                     </>
                               )}
                               {status === 'approved' && (
                                     <>
-                                          <Tooltip content="Set comment as pending">
+                                          <Tooltip content="Pending">
                                                 <button
                                                       onClick={() => handleStatusChange('pending')}
-                                                      className="text-yellow-500 text-sm mt-2 mr-2"
+                                                      className="text-black flex items-center space-x-1"
                                                 >
-                                                      <FaClock />
+                                                      <ClockArrowDown className="w-4" />{' '}
+                                                      <span className="text-gray-400 text-xs">Pending</span>
                                                 </button>
                                           </Tooltip>
-                                          <Tooltip content="Archive comment">
+                                          <Tooltip content="Archive">
                                                 <button
                                                       onClick={() => handleStatusChange('archived')}
-                                                      className="text-gray-500 text-sm mt-2 mr-2"
+                                                      className="text-black flex items-center space-x-1"
                                                 >
-                                                      <FaArchive />
+                                                      <Archive className="w-4" />{' '}
+                                                      <span className="text-gray-400 text-xs">Archive</span>
                                                 </button>
                                           </Tooltip>
                                     </>
                               )}
                               {status === 'archived' && (
                                     <>
-                                          <Tooltip content="Approve comment">
+                                          <Tooltip content="Approve">
                                                 <button
                                                       onClick={() => handleStatusChange('approved')}
-                                                      className="text-green-500 text-sm mt-2 mr-2"
+                                                      className="text-black flex items-center space-x-1"
                                                 >
-                                                      <FaCheck />
+                                                      <Check className="w-4" />{' '}
+                                                      <span className="text-gray-400 text-xs">Approve</span>
                                                 </button>
                                           </Tooltip>
-                                          <Tooltip content="Set comment as pending">
+                                          <Tooltip content="Pending">
                                                 <button
                                                       onClick={() => handleStatusChange('pending')}
-                                                      className="text-yellow-500 text-sm mt-2 mr-2"
+                                                      className="text-black flex items-center space-x-1"
                                                 >
-                                                      <FaClock />
+                                                      <ClockArrowDown className="w-4" />{' '}
+                                                      <span className="text-gray-400 text-xs">Pending</span>
                                                 </button>
                                           </Tooltip>
                                     </>
@@ -185,9 +199,9 @@ export default function CommentActions({
                   )}
 
                   {isAdmin && (
-                        <Tooltip content="Permanently delete comment">
-                              <Button onClick={onHardDelete} variant="ghost" className="text-red-700 text-sm mt-2 mr-2">
-                                    <Trash className="h-4 w-4" />
+                        <Tooltip content="Permanently Delete!">
+                              <Button onClick={onHardDelete} variant="none" className="text-red-700 text-sm">
+                                    <Bomb className="w-4" />
                               </Button>
                         </Tooltip>
                   )}

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
+import { ArrowBigUp, ArrowBigDown } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 
 interface VoteComponentProps {
@@ -75,15 +75,15 @@ export default function VoteComponent({
                         className={`focus:outline-none ${userVote === 'upvote' ? 'text-green-500' : 'text-gray-500'}`}
                         disabled={isDisabled}
                   >
-                        <FaArrowUp />
+                        <ArrowBigUp strokeWidth={1.5} />
                   </button>
-                  <span>{upVotes - downVotes}</span>
+                  <span className="text-gray-500 text-sm font-semibold">{upVotes - downVotes}</span>
                   <button
                         onClick={() => handleVote('downvote')}
                         className={`focus:outline-none ${userVote === 'downvote' ? 'text-red-500' : 'text-gray-500'}`}
                         disabled={isDisabled}
                   >
-                        <FaArrowDown />
+                        <ArrowBigDown strokeWidth={1.5} />
                   </button>
             </div>
       )

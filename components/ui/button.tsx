@@ -1,9 +1,9 @@
 // components/ui/button.tsx
 
-import { ButtonHTMLAttributes, forwardRef } from 'react';
+import { ButtonHTMLAttributes, forwardRef } from 'react'
 
 function cn(...classes: (string | boolean | undefined)[]): string {
-      return classes.filter(Boolean).join(' ');
+      return classes.filter(Boolean).join(' ')
 }
 
 const buttonVariants = {
@@ -13,10 +13,11 @@ const buttonVariants = {
       destructive: 'bg-red-500 text-white hover:bg-red-600',
       ghost: 'bg-transparent hover:bg-gray-100',
       disabled: 'bg-gray-400 hover:bg-gray-400 text-white text-sm',
-};
+      none: ''
+}
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-      variant?: keyof typeof buttonVariants;
+      variant?: keyof typeof buttonVariants
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant = 'primary', ...props }, ref) => {
@@ -30,9 +31,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant 
                   )}
                   {...props}
             />
-      );
-});
+      )
+})
 
-Button.displayName = 'Button';
+Button.displayName = 'Button'
 
-export { Button };
+export { Button }

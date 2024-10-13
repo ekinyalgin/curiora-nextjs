@@ -7,12 +7,13 @@ import UserInfo from './UserInfo'
 import VoteComponent from './VoteComponent'
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { Archive, ArchiveRestore, Flag } from 'lucide-react'
+import { Archive, ArchiveRestore, Flag, MessageCircle, Settings2 } from 'lucide-react'
 import CommentSection from './CommentSection'
 import { ReportModal } from './ReportModal'
 import { ReportCategory } from '@prisma/client'
 import { Button } from './ui/button'
 import Notification from './Notification'
+import { Tooltip } from './ui/Tooltip'
 
 export default function PostComponent({ post, showEditLink = false, onArchive }) {
       if (!post) return null
@@ -143,24 +144,43 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                                     )}
                                     {showEditLink && (
                                           <>
-                                                <Link
-                                                      href={`/admin/posts/${post.id}`}
-                                                      className="text-xs bg-red-500 hover:bg-red-600 transition text-white py-1 px-2 rounded-sm"
-                                                >
-                                                      Edit
-                                                </Link>
+                                                <Tooltip content="Edit">
+                                                      <Link
+                                                            href={`/admin/posts/${post.id}`}
+                                                            className="text-xs bg-red-500 hover:bg-red-600 transition text-white px-1 rounded-sm"
+                                                      >
+                                                            <Settings2 className="w-4" />
+                                                      </Link>
+                                                </Tooltip>
+                                          </>
+                                    )}
+                                    <>
+                                          <Tooltip content="Archive">
                                                 <button
                                                       onClick={handleArchiveToggle}
                                                       className={`text-xs ${
                                                             isArchived
                                                                   ? 'bg-green-500 hover:bg-green-600'
-                                                                  : 'bg-yellow-500 hover:bg-yellow-600'
-                                                      } transition text-white py-1 px-2 rounded-sm`}
+                                                                  : ' bg-yellow-400 hover:bg-yellow-500 '
+                                                      } transition text-white px-1 rounded-sm`}
                                                 >
-                                                      {isArchived ? <Archive /> : <ArchiveRestore />}
+                                                      {isArchived ? (
+                                                            <Archive className="w-4" />
+                                                      ) : (
+                                                            <ArchiveRestore className="w-4" />
+                                                      )}
                                                 </button>
-                                          </>
-                                    )}
+                                          </Tooltip>
+                                          <Tooltip content="Flag">
+                                                <Button
+                                                      variant="none"
+                                                      className="text-black py-0 px-1 rounded-sm bg-gray-100 hover:bg-gray-200 "
+                                                      onClick={() => setIsReportModalOpen(true)}
+                                                >
+                                                      <Flag className="text-black w-4" />
+                                                </Button>
+                                          </Tooltip>
+                                    </>
                               </div>
                         </div>
 
@@ -175,11 +195,6 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                                     className="mb-4 rounded-lg"
                               />
                         )}
-
-                        <Button variant="ghost" onClick={() => setIsReportModalOpen(true)}>
-                              <Flag className="h-4 w-4 mr-2" />
-                              Report
-                        </Button>
 
                         <div
                               className="text-base text-gray-800 prose max-w-none"
@@ -220,8 +235,8 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                                     onVote={handleVote}
                                     isDisabled={isArchived}
                               />
-                              <span className="text-sm text-gray-500">
-                                    {post.commentCount} comment{post.commentCount !== 1 ? 's' : ''}
+                              <span className="text-sm text-gray-800 flex items-center font-semibold">
+                                    <MessageCircle className="w-4 mr-1" /> {post.commentCount}
                               </span>
                         </div>
                   </article>

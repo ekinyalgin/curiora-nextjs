@@ -5,7 +5,7 @@ import CommentActions from './CommentActions'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import VoteComponent from './VoteComponent'
-import { Flag } from 'lucide-react'
+import { Flag, Trash, Check, X } from 'lucide-react'
 import { ReportModal } from './ReportModal'
 import { ReportCategory } from '@prisma/client'
 import Notification from './Notification'
@@ -57,6 +57,7 @@ export default function CommentItem({
       const [userVote, setUserVote] = useState(comment.userVote)
       const [isReportModalOpen, setIsReportModalOpen] = useState(false)
       const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+      const [isHardDeleteConfirm, setIsHardDeleteConfirm] = useState(false)
 
       const handleReply = async (text: string) => {
             const parentId = isChild ? topLevelParentId : comment.id
@@ -89,13 +90,24 @@ export default function CommentItem({
       }
 
       const handleHardDelete = async () => {
-            if (
-                  window.confirm(
-                        'Are you sure you want to permanently delete this comment? This action cannot be undone.'
-                  )
-            ) {
-                  await onHardDelete(comment.id)
+            if (!isHardDeleteConfirm) {
+                  setIsHardDeleteConfirm(true)
+                  return
             }
+
+            try {
+                  await onHardDelete(comment.id)
+                  setNotification({ message: 'Comment permanently deleted.', type: 'success' })
+            } catch (error) {
+                  console.error('Error hard deleting comment:', error)
+                  setNotification({ message: 'Failed to delete comment. Please try again.', type: 'error' })
+            } finally {
+                  setIsHardDeleteConfirm(false)
+            }
+      }
+
+      const cancelHardDelete = () => {
+            setIsHardDeleteConfirm(false)
       }
 
       const canEditDelete = isAdmin || (session && session.user.id === comment.userId)
@@ -270,6 +282,36 @@ export default function CommentItem({
                                                 type={notification.type}
                                                 onClose={() => setNotification(null)}
                                           />
+                                    )}
+                                    {isAdmin && (
+                                          <div className="inline-block">
+                                                {isHardDeleteConfirm ? (
+                                                      <>
+                                                            <Button
+                                                                  onClick={handleHardDelete}
+                                                                  variant="ghost"
+                                                                  className="text-green-500"
+                                                            >
+                                                                  <Check className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                  onClick={cancelHardDelete}
+                                                                  variant="ghost"
+                                                                  className="text-red-500"
+                                                            >
+                                                                  <X className="h-4 w-4" />
+                                                            </Button>
+                                                      </>
+                                                ) : (
+                                                      <Button
+                                                            onClick={() => setIsHardDeleteConfirm(true)}
+                                                            variant="ghost"
+                                                            className="text-red-700"
+                                                      >
+                                                            <Trash className="h-4 w-4" />
+                                                      </Button>
+                                                )}
+                                          </div>
                                     )}
                               </>
                         )}

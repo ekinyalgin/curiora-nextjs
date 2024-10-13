@@ -7,13 +7,12 @@ function cn(...classes: (string | boolean | undefined)[]): string {
 }
 
 const buttonVariants = {
-      primary: 'bg-primary text-white hover:bg-primary/90 text-sm',
-      secondary: 'bg-secondary text-black hover:bg-secondary/90 text-sm',
-      outline: 'border border-gray-300 text-gray-700 hover:bg-gray-100 text-sm',
-      destructive: 'bg-red-500 text-white hover:bg-red-600',
-      ghost: 'bg-transparent hover:bg-gray-100',
-      disabled: 'bg-gray-400 hover:bg-gray-400 text-white text-sm',
-      none: ''
+      primary: 'bg-primary text-white hover:bg-primary/90 text-sm px-4 py-2 rounded-md transition-all ',
+      secondary: 'bg-secondary text-black hover:bg-secondary/90 text-sm px-4 py-2 rounded-md transition-all',
+      outline: 'border border-gray-300 text-gray-700 hover:bg-gray-100 text-sm px-4 py-2 rounded-md transition-all',
+      destructive: 'bg-red-500 text-white hover:bg-red-600 px-4 py-2 rounded-md transition-all',
+      ghost: 'bg-transparent hover:bg-gray-100 px-4 py-2 rounded-md transition-all',
+      disabled: 'bg-gray-400 hover:bg-gray-400 text-white text-sm px-4 py-2 rounded-md transition-all'
 }
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -25,7 +24,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant 
             <button
                   ref={ref}
                   className={cn(
-                        'px-4 py-2 rounded-md transition-all',
+                        '',
                         buttonVariants[variant], // Seçilen varyasyonun stilini uygula
                         className
                   )}

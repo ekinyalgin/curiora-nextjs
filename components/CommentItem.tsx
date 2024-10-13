@@ -4,12 +4,8 @@ import { RelativeDate } from './RelativeDate'
 import CommentActions from './CommentActions'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
-import VoteComponent from './VoteComponent'
-import { Flag, Trash, Check, X } from 'lucide-react'
-import { ReportModal } from './ReportModal'
 import { ReportCategory } from '@prisma/client'
 import Notification from './Notification'
-import { Button } from './ui/button'
 
 interface CommentItemProps {
       comment: any
@@ -55,9 +51,7 @@ export default function CommentItem({
             downVotes: comment.voteCount?.downVotes || 0
       })
       const [userVote, setUserVote] = useState(comment.userVote)
-      const [isReportModalOpen, setIsReportModalOpen] = useState(false)
       const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-      const [isHardDeleteConfirm, setIsHardDeleteConfirm] = useState(false)
 
       const handleReply = async (text: string) => {
             const parentId = isChild ? topLevelParentId : comment.id
@@ -90,24 +84,7 @@ export default function CommentItem({
       }
 
       const handleHardDelete = async () => {
-            if (!isHardDeleteConfirm) {
-                  setIsHardDeleteConfirm(true)
-                  return
-            }
-
-            try {
-                  await onHardDelete(comment.id)
-                  setNotification({ message: 'Comment permanently deleted.', type: 'success' })
-            } catch (error) {
-                  console.error('Error hard deleting comment:', error)
-                  setNotification({ message: 'Failed to delete comment. Please try again.', type: 'error' })
-            } finally {
-                  setIsHardDeleteConfirm(false)
-            }
-      }
-
-      const cancelHardDelete = () => {
-            setIsHardDeleteConfirm(false)
+            await onHardDelete(comment.id)
       }
 
       const canEditDelete = isAdmin || (session && session.user.id === comment.userId)
@@ -115,9 +92,9 @@ export default function CommentItem({
       const getCommentStyle = () => {
             switch (comment.status) {
                   case 'pending':
-                        return 'opacity-50'
+                        return 'border-l-2 border-yellow-500'
                   case 'archived':
-                        return 'border-red-500 border-2'
+                        return 'border-l-2 border-red-500'
                   default:
                         return ''
             }
@@ -184,7 +161,6 @@ export default function CommentItem({
       return (
             <div className={`mb-4 ${isChild ? 'ml-10' : ''}`}>
                   <div className={`bg-gray-50 p-4 rounded-lg ${getCommentStyle()}`}>
-                        <ReportModal type="comment" id={comment.id} />
                         <div className="flex items-center space-x-2 mb-2">
                               {comment.user.image ? (
                                     <Image
@@ -205,25 +181,27 @@ export default function CommentItem({
                               </div>
                         </div>
                         {activeTextarea === `edit-${comment.id}` ? (
-                              <div>
+                              <div className="relative">
                                     <textarea
                                           value={editText}
                                           onChange={(e) => setEditText(e.target.value)}
-                                          className="w-full p-2 border rounded-lg"
+                                          className="text-sm w-full p-2 border rounded-lg"
                                           rows={3}
                                     />
-                                    <button
-                                          onClick={() => handleEdit(editText)}
-                                          className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg mr-2"
-                                    >
-                                          Save
-                                    </button>
-                                    <button
-                                          onClick={() => setActiveTextarea(null)}
-                                          className="mt-2 px-4 py-2 bg-gray-500 text-white rounded-lg"
-                                    >
-                                          Cancel
-                                    </button>
+                                    <div className="absolute bottom-4 right-1">
+                                          <button
+                                                onClick={() => handleEdit(editText)}
+                                                className=" px-2 py-1 border-b-2 border-green-400 text-green-500 hover:bg-green-100 transition rounded-lg text-xs font-semibold"
+                                          >
+                                                Save
+                                          </button>
+                                          <button
+                                                onClick={() => setActiveTextarea(null)}
+                                                className="px-2 py-1 bg-transparent text-gray-400 rounded-lg text-xs"
+                                          >
+                                                Cancel
+                                          </button>
+                                    </div>
                               </div>
                         ) : (
                               <>
@@ -247,6 +225,8 @@ export default function CommentItem({
                                           onSoftDelete={handleSoftDelete}
                                           onRestore={handleRestore}
                                           onHardDelete={handleHardDelete}
+                                          onVote={handleVote}
+                                          onReport={handleReport}
                                           commentText={comment.commentText}
                                           canEditDelete={canEditDelete}
                                           isAdmin={isAdmin}
@@ -256,64 +236,19 @@ export default function CommentItem({
                                           status={comment.status}
                                           isDeleted={comment.isDeleted}
                                           isArchived={isArchived}
-                                    />
-                                    <VoteComponent
-                                          itemId={comment.id}
-                                          itemType="comment"
+                                          commentId={comment.id}
                                           initialUpVotes={voteCount.upVotes}
                                           initialDownVotes={voteCount.downVotes}
                                           userVote={userVote}
-                                          onVote={handleVote}
-                                          isDisabled={isArchived}
                                     />
-                                    <Button variant="ghost" onClick={() => setIsReportModalOpen(true)}>
-                                          <Flag className="h-4 w-4 mr-2" />
-                                          Report
-                                    </Button>
-                                    <ReportModal
-                                          isOpen={isReportModalOpen}
-                                          onClose={() => setIsReportModalOpen(false)}
-                                          onSubmit={handleReport}
-                                          type="comment"
-                                    />
-                                    {notification && (
-                                          <Notification
-                                                message={notification.message}
-                                                type={notification.type}
-                                                onClose={() => setNotification(null)}
-                                          />
-                                    )}
-                                    {isAdmin && (
-                                          <div className="inline-block">
-                                                {isHardDeleteConfirm ? (
-                                                      <>
-                                                            <Button
-                                                                  onClick={handleHardDelete}
-                                                                  variant="ghost"
-                                                                  className="text-green-500"
-                                                            >
-                                                                  <Check className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                  onClick={cancelHardDelete}
-                                                                  variant="ghost"
-                                                                  className="text-red-500"
-                                                            >
-                                                                  <X className="h-4 w-4" />
-                                                            </Button>
-                                                      </>
-                                                ) : (
-                                                      <Button
-                                                            onClick={() => setIsHardDeleteConfirm(true)}
-                                                            variant="ghost"
-                                                            className="text-red-700"
-                                                      >
-                                                            <Trash className="h-4 w-4" />
-                                                      </Button>
-                                                )}
-                                          </div>
-                                    )}
                               </>
+                        )}
+                        {notification && (
+                              <Notification
+                                    message={notification.message}
+                                    type={notification.type}
+                                    onClose={() => setNotification(null)}
+                              />
                         )}
                   </div>
 

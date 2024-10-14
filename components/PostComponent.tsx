@@ -14,6 +14,9 @@ import { ReportCategory } from '@prisma/client'
 import { Button } from './ui/button'
 import Notification from './Notification'
 import { Tooltip } from './ui/Tooltip'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import ReactMarkdown from 'react-markdown'
 
 export default function PostComponent({ post, showEditLink = false, onArchive }) {
       if (!post) return null
@@ -27,6 +30,12 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
       const [isArchived, setIsArchived] = useState(post.status === 'archived')
       const [isReportModalOpen, setIsReportModalOpen] = useState(false)
       const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+      const editor = useEditor({
+            extensions: [StarterKit],
+            content: post.content,
+            editable: false
+      })
 
       const handleVote = async (voteType: 'upvote' | 'downvote' | null) => {
             if (!session || isArchived) {
@@ -196,10 +205,9 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                               />
                         )}
 
-                        <div
-                              className="text-base text-gray-800 prose max-w-none"
-                              dangerouslySetInnerHTML={{ __html: post.content }}
-                        />
+                        <div className="text-base text-gray-800 prose max-w-none">
+                              <ReactMarkdown>{post.content}</ReactMarkdown>
+                        </div>
 
                         {isArchived && (
                               <div className="border border-yellow-700 text-yellow-700 p-4 rounded" role="alert">

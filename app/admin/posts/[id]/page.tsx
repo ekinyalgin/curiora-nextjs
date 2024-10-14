@@ -4,14 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AdminFormLayout } from '@/components/ui/admin-form-layout'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LanguageSelect } from '@/components/ui/language-select'
 import { FeaturedImageSelect } from '@/components/ui/featured-image-select'
 import { TagInput } from '@/components/ui/tag-input'
 import { SlugInput, createSlug } from '@/components/ui/slug-input'
 import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils'
-import { PostContentEditor } from '@/components/PostContentEditor'
+import Editor from '@/components/Editor'
 
 export default function EditPost({ params }: { params: { id: string } }) {
       const [post, setPost] = useState({
@@ -84,7 +83,6 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         postToSubmit.slug = createSlug(postToSubmit.title)
                   }
 
-                  // Slug benzersizliğini kontrol et
                   const isUnique = await checkSlugUniqueness(postToSubmit.slug, 'post', id)
                   if (!isUnique) {
                         postToSubmit.slug = await generateUniqueSlug(postToSubmit.slug, 'post', id)
@@ -112,8 +110,8 @@ export default function EditPost({ params }: { params: { id: string } }) {
             }
       }
 
-      const handleInputChange = (name: string, value: string) => {
-            setPost((prev) => ({ ...prev, [name]: value }))
+      const handleInputChange = (name: string, value: string | undefined) => {
+            setPost((prev) => ({ ...prev, [name]: value ?? '' }))
       }
 
       const handleFeaturedImageSelect = (imageId: number | null) => {
@@ -147,11 +145,9 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         placeholder="Enter slug or leave empty to generate automatically"
                         autoGenerate={false}
                   />
-                  <PostContentEditor
-                        value={post.content}
-                        onChange={(value) => handleInputChange('content', value)}
-                        placeholder="Enter post content"
-                  />
+
+                  <Editor content={post.content} onChange={(newContent) => handleInputChange('content', newContent)} />
+
                   <Select
                         value={post.status}
                         onValueChange={(value) => setPost((prev) => ({ ...prev, status: value }))}
@@ -217,7 +213,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         onChange={(e) => handleInputChange('seoTitle', e.target.value)}
                         placeholder="Enter SEO title"
                   />
-                  <Textarea
+                  <Input
                         name="seoDescription"
                         label="SEO Description"
                         value={post.seoDescription}

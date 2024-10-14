@@ -8,6 +8,8 @@ import { ReportCategory } from '@prisma/client'
 import Notification from './Notification'
 import { ClipboardCopy } from 'lucide-react'
 import { Tooltip } from './ui/Tooltip'
+import ReactMarkdown from 'react-markdown'
+import Editor from './Editor'
 
 interface CommentItemProps {
       comment: any
@@ -230,16 +232,11 @@ export default function CommentItem({
                         </div>
                         {activeTextarea === `edit-${comment.id}` ? (
                               <div className="relative">
-                                    <textarea
-                                          value={editText}
-                                          onChange={(e) => setEditText(e.target.value)}
-                                          className="text-sm w-full p-2 border rounded-lg"
-                                          rows={3}
-                                    />
+                                    <Editor content={editText} onChange={setEditText} simpleMode={true} />
                                     <div className="absolute bottom-4 right-1">
                                           <button
                                                 onClick={() => handleEdit(editText)}
-                                                className=" px-2 py-1 border-b-2 border-green-400 text-green-500 hover:bg-green-100 transition rounded-lg text-xs font-semibold"
+                                                className="px-2 py-1 border-b-2 border-green-400 text-green-500 hover:bg-green-100 transition rounded-lg text-xs font-semibold"
                                           >
                                                 Save
                                           </button>
@@ -265,7 +262,9 @@ export default function CommentItem({
                                                 )}
                                           </div>
                                     ) : (
-                                          <p className="text-sm">{comment.commentText}</p>
+                                          <div className="text-sm prose prose-sm max-w-none">
+                                                <ReactMarkdown>{comment.commentText}</ReactMarkdown>
+                                          </div>
                                     )}
                                     <CommentActions
                                           onReply={handleReply}

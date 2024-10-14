@@ -64,7 +64,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                   categoryId: data.category.id.toString(),
                   languageId: data.language.id.toString(),
                   featuredImageId: data.featuredImageId,
-                  featuredImage: data.featuredImage, // Bu satırı ekleyin veya güncelleyin
+                  featuredImage: data.featuredImage,
                   tags: data.tags ? data.tags.map((tag: { name: string }) => tag.name) : []
             })
       }
@@ -101,7 +101,8 @@ export default function EditPost({ params }: { params: { id: string } }) {
                               ...postToSubmit,
                               user: { id: postToSubmit.userId },
                               category: { id: postToSubmit.categoryId },
-                              language: { id: postToSubmit.languageId }
+                              language: { id: postToSubmit.languageId },
+                              featuredImage: { id: postToSubmit.featuredImageId }
                         })
                   })
 

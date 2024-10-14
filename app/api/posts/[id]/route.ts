@@ -17,7 +17,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
                         },
                         category: true,
                         language: true,
-                        tags: true
+                        tags: true,
+                        featuredImage: true
                   }
             })
 
@@ -32,7 +33,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
                         ...post.user,
                         roleName: post.user.role?.name || 'User'
                   },
-                  featuredImage: post.featuredImage // 'featured_image' yerine 'featuredImage' kullanın
+                  featuredImage: post.featuredImage?.filePath, // Bu satırı güncelleyin
+                  featuredImageId: post.featuredImage?.id // Bu satırı ekleyin
             }
 
             return NextResponse.json(postWithUserRole)

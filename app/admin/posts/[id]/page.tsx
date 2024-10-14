@@ -6,11 +6,13 @@ import { AdminFormLayout } from '@/components/ui/admin-form-layout'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LanguageSelect } from '@/components/ui/language-select'
-import { FeaturedImageSelect } from '@/components/ui/featured-image-select'
+import { ImageSelect } from '@/components/ui/imageSelect/image-select'
 import { TagInput } from '@/components/ui/tag-input'
 import { SlugInput, createSlug } from '@/components/ui/slug-input'
 import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils'
 import Editor from '@/components/Editor'
+import Image from 'next/image'
+import { Button } from '@/components/ui/button'
 
 export default function EditPost({ params }: { params: { id: string } }) {
       const [post, setPost] = useState({
@@ -25,11 +27,14 @@ export default function EditPost({ params }: { params: { id: string } }) {
             seoTitle: '',
             seoDescription: '',
             featuredImageId: null as number | null,
+            featuredImage: '', // Bunu ekleyin
             tags: [] as string[]
       })
       const [users, setUsers] = useState([])
       const [categories, setCategories] = useState([])
       const [isLoading, setIsLoading] = useState(true)
+      const [showImageSelect, setShowImageSelect] = useState(false)
+      const [showEditorImageSelect, setShowEditorImageSelect] = useState(false)
       const router = useRouter()
       const id = parseInt(params.id)
 
@@ -59,6 +64,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                   categoryId: data.category.id.toString(),
                   languageId: data.language.id.toString(),
                   featuredImageId: data.featuredImageId,
+                  featuredImage: data.featuredImage, // Bu satırı ekleyin veya güncelleyin
                   tags: data.tags ? data.tags.map((tag: { name: string }) => tag.name) : []
             })
       }
@@ -114,12 +120,25 @@ export default function EditPost({ params }: { params: { id: string } }) {
             setPost((prev) => ({ ...prev, [name]: value ?? '' }))
       }
 
-      const handleFeaturedImageSelect = (imageId: number | null) => {
-            setPost((prev) => ({ ...prev, featuredImageId: imageId }))
+      const handleFeaturedImageSelect = (image: { filePath: string; id: number }) => {
+            setPost((prev) => ({
+                  ...prev,
+                  featuredImageId: image.id,
+                  featuredImage: image.filePath // 'featured_image' yerine 'featuredImage' kullanın
+            }))
+            setShowImageSelect(false)
       }
 
       const handleTagsChange = (newTags: string[]) => {
             setPost((prev) => ({ ...prev, tags: newTags }))
+      }
+
+      const handleEditorImageSelect = (imageUrl: string) => {
+            setPost((prev) => ({
+                  ...prev,
+                  content: prev.content + `\n![Alt text](${imageUrl})`
+            }))
+            setShowEditorImageSelect(false)
       }
 
       if (isLoading) {
@@ -146,7 +165,11 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         autoGenerate={false}
                   />
 
-                  <Editor content={post.content} onChange={(newContent) => handleInputChange('content', newContent)} />
+                  <Editor
+                        content={post.content}
+                        onChange={(content) => setPost({ ...post, content })}
+                        onImageButtonClick={() => setShowEditorImageSelect(true)}
+                  />
 
                   <Select
                         value={post.status}
@@ -204,7 +227,38 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         value={post.languageId}
                         onChange={(value) => setPost((prev) => ({ ...prev, languageId: value }))}
                   />
-                  <FeaturedImageSelect value={post.featuredImageId} onChange={handleFeaturedImageSelect} />
+                  <div>
+                        <label className="block text-sm font-medium text-gray-700">Featured Image</label>
+                        {post.featuredImage && (
+                              <div className="mt-2">
+                                    <Image
+                                          src={post.featuredImage}
+                                          alt="Featured Image"
+                                          width={200}
+                                          height={200}
+                                          className="object-cover rounded-md"
+                                    />
+                              </div>
+                        )}
+                        <Button type="button" onClick={() => setShowImageSelect(true)} className="mt-2">
+                              {post.featuredImageId ? 'Change' : 'Select'} Featured Image
+                        </Button>
+                  </div>
+
+                  <ImageSelect
+                        value={post.featuredImageId}
+                        onSelect={handleFeaturedImageSelect}
+                        isOpen={showImageSelect}
+                        onClose={() => setShowImageSelect(false)}
+                  />
+
+                  {showEditorImageSelect && (
+                        <ImageSelect
+                              onSelect={(image) => handleEditorImageSelect(image.filePath)}
+                              onClose={() => setShowEditorImageSelect(false)}
+                              isOpen={showEditorImageSelect}
+                        />
+                  )}
                   <TagInput tags={post.tags} setTags={handleTagsChange} />
                   <Input
                         name="seoTitle"

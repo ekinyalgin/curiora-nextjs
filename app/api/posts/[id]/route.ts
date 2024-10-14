@@ -31,7 +31,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
                   user: {
                         ...post.user,
                         roleName: post.user.role?.name || 'User'
-                  }
+                  },
+                  featuredImage: post.featuredImage // 'featured_image' yerine 'featuredImage' kullanın
             }
 
             return NextResponse.json(postWithUserRole)
@@ -41,13 +42,12 @@ export async function GET(request: Request, { params }: { params: { id: string }
       }
 }
 
-// PUT - Update a post
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-      const id = parseInt(params.id)
+      const id = parseInt(params.id) // ID integer'a çevriliyor
 
       try {
             const body = await request.json()
-            const { user, category, language, tags, ...postData } = body
+            const { user, category, language, tags, featuredImage, id: postId, ...postData } = body
 
             if (!user || !category || !language) {
                   return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -58,6 +58,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                   data: {
                         ...postData,
                         userId: user.id,
+                        featuredImageId: featuredImage.id,
                         categoryId: parseInt(category.id),
                         languageId: parseInt(language.id),
                         tags: {
@@ -77,10 +78,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                               }))
                         }
                   },
+
                   include: {
-                        user: {
-                              include: { role: true }
-                        },
+                        user: { include: { role: true } },
                         category: true,
                         language: true,
                         tags: true

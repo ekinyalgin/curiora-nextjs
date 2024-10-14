@@ -8,7 +8,9 @@ import TableRow from '@tiptap/extension-table-row'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
 import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
 import { Plugin, PluginKey } from 'prosemirror-state'
+import { useState } from 'react'
 
 import { Button } from './ui/button'
 import {
@@ -25,9 +27,14 @@ import {
       Pilcrow,
       Table as TableIcon,
       Link as LinkIcon,
-      Merge
+      Merge,
+      Image as ImageIcon
 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { ImageSelect } from './ui/imageSelect/image-select'
+
+// Ensure CodeBlockComponent is imported
+import CodeBlockComponent from './CodeBlockComponent'
 
 const lowlight = createLowlight(common)
 
@@ -46,9 +53,12 @@ interface EditorProps {
       content: string
       onChange: (content: string) => void
       simpleMode?: boolean
+      onImageButtonClick?: () => void
 }
 
-const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
+const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: EditorProps) => {
+      const [showImageSelect, setShowImageSelect] = useState(false)
+
       const editor = useEditor({
             extensions: [
                   StarterKit.configure({
@@ -59,14 +69,16 @@ const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
                         tightLists: true,
                         bulletListMarker: '-',
                         linkify: true,
-                        breaks: false
+                        breaks: false,
+                        transformPastedText: true
                   }),
                   CodeBlockLowlight.configure({
                         lowlight,
                         defaultLanguage: 'javascript',
                         HTMLAttributes: {
                               class: 'code-block'
-                        }
+                        },
+                        renderHTMLElement: CodeBlockComponent
                   }),
                   Table.configure({
                         resizable: true,
@@ -80,13 +92,16 @@ const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
                   Link.configure({
                         openOnClick: false
                   }),
+                  Image.configure({
+                        inline: true,
+                        allowBase64: true
+                  }),
                   new Plugin({
                         key: new PluginKey('handlePaste'),
                         props: {
                               handlePaste: (view, event, slice) => {
                                     const text = event.clipboardData?.getData('text/plain')
                                     if (text) {
-                                          // Eğer metin birden fazla satır içeriyorsa ve kod bloğu içinde değilsek
                                           if (
                                                 text.includes('\n') &&
                                                 !view.state.selection.$from.parent.type.name.includes('code')
@@ -121,7 +136,6 @@ const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
                               const { $from } = selection
                               const node = $from.parent
 
-                              // Eğer zaten bir kod bloğu içindeysek
                               if (node.type.name === 'codeBlock') {
                                     view.dispatch(view.state.tr.insertText(clipboardData))
                               } else {
@@ -166,6 +180,11 @@ const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
                   const mergedContent = editor.state.doc.textBetween(from, to, '\n')
                   editor.chain().focus().deleteSelection().insertContentAt(from, mergedContent).run()
             }
+      }
+
+      const handleImageSelect = (image: { filePath: string; id: number }) => {
+            editor?.chain().focus().setImage({ src: image.filePath }).run()
+            setShowImageSelect(false)
       }
 
       return (
@@ -334,6 +353,15 @@ const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
                               >
                                     <Merge className="w-4" />
                               </Button>
+                              <Button
+                                    type="button"
+                                    variant="none"
+                                    size="sm"
+                                    onClick={() => setShowImageSelect(true)}
+                                    className="hover:bg-gray-200 rounded-full transition"
+                              >
+                                    <ImageIcon className="w-4" />
+                              </Button>
                         </div>
                   )}
                   {simpleMode && (
@@ -482,6 +510,13 @@ const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
                         }
                   `}</style>
                   <EditorContent editor={editor} className="prose max-w-none focus:outline-none px-2" />
+                  {showImageSelect && (
+                        <ImageSelect
+                              onSelect={handleImageSelect}
+                              onClose={() => setShowImageSelect(false)}
+                              isOpen={showImageSelect}
+                        />
+                  )}
             </div>
       )
 }

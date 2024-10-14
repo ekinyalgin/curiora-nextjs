@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
       try {
             const body = await request.json()
-            const { user, category, language, tags, ...postData } = body
+            const { user, category, language, tags, featuredImage, ...postData } = body
 
             if (!user || !category || !language) {
                   return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -60,6 +60,7 @@ export async function POST(request: Request) {
             const post = await prisma.post.create({
                   data: {
                         ...postData,
+                        featuredImage: featuredImage, // 'featured_image' yerine 'featuredImage' kullanın
                         userId: user.id,
                         categoryId: parseInt(category.id),
                         languageId: parseInt(language.id),

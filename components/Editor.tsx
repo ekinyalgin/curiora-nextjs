@@ -399,6 +399,10 @@ const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
                               font-family: 'Fira Code', monospace;
                               font-size: 0.9em;
                         }
+                        .prose li p {
+                              margin: 0;
+                              padding: 0;
+                        }
                         .hljs-comment,
                         .hljs-quote {
                               color: #998;
@@ -468,6 +472,13 @@ const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
                         }
                         .hljs-strong {
                               font-weight: bold;
+                        }
+                        code {
+                              background-color: rgb(243 244 246);
+                        }
+                        code:before,
+                        code:after {
+                              display: none;
                         }
                   `}</style>
                   <EditorContent editor={editor} className="prose max-w-none focus:outline-none px-2" />

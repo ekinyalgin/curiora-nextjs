@@ -58,6 +58,8 @@ export default function RoleManagement() {
 
       const fetchRoles = async () => {
             try {
+                  await new Promise((resolve) => setTimeout(resolve, 1000)) // 2 saniye bekletme
+
                   setLoading(true)
                   const response = await fetch('/api/roles')
                   if (!response.ok) throw new Error('Failed to fetch roles')

@@ -1,85 +1,142 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { AdminListLayout } from '@/components/ui/admin-list-layout';
-import { ColumnDef } from '@tanstack/react-table';
-import { Tag } from '@prisma/client';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { ColumnDef } from '@tanstack/react-table'
+import { TableComponent } from '@/components/TableComponent'
+import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 
-interface TagWithLanguage extends Tag {
-      language: {
-            code: string;
-            name: string;
-      } | null;
+interface Tag {
+      id: number
+      name: string
+      slug: string
+      description: string
+      featuredImage: string | null
 }
 
-export default function TagsPage() {
-      const [tags, setTags] = useState<TagWithLanguage[]>([]);
-      const router = useRouter();
+interface SessionUser {
+      role?: string
+}
+
+export default function TagManagement() {
+      const [tags, setTags] = useState<Tag[]>([])
+      const [loading, setLoading] = useState(true)
+      const [error, setError] = useState<string | null>(null)
+      const { data: session, status } = useSession()
+      const router = useRouter()
 
       useEffect(() => {
-            fetchTags();
-      }, []);
+            if (status === 'authenticated') {
+                  if ((session?.user as SessionUser)?.role !== 'admin') {
+                        router.push('/')
+                  } else {
+                        fetchTags()
+                  }
+            } else if (status === 'unauthenticated') {
+                  router.push('/')
+            }
+      }, [status, session, router])
 
-      async function fetchTags() {
-            const response = await fetch('/api/tags');
-            const data = await response.json();
-            setTags(data);
-      }
-
-      async function deleteTag(id: number) {
-            await fetch(`/api/tags/${id}`, { method: 'DELETE' });
-            fetchTags();
+      const fetchTags = async () => {
+            try {
+                  setLoading(true)
+                  const response = await fetch('/api/tags')
+                  if (!response.ok) throw new Error('Failed to fetch tags')
+                  const data = await response.json()
+                  setTags(data)
+            } catch (err) {
+                  setError('Failed to load tags. Please try again later.')
+                  console.error('Error fetching tags:', err)
+            } finally {
+                  setLoading(false)
+            }
       }
 
       const handleEdit = (id: number) => {
-            router.push(`/admin/tags/edit/${id}`);
-      };
+            router.push(`/admin/tags/edit/${id}`)
+      }
 
-      const columns: ColumnDef<TagWithLanguage>[] = [
+      const handleDelete = async (id: number) => {
+            try {
+                  const response = await fetch('/api/tags', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id })
+                  })
+                  if (!response.ok) throw new Error('Failed to delete tag')
+                  await fetchTags()
+            } catch (err) {
+                  console.error('Error deleting tag:', err)
+                  alert('Failed to delete tag. Please try again.')
+            }
+      }
+
+      const columns: ColumnDef<Tag>[] = [
+            {
+                  accessorKey: 'id',
+                  header: 'ID',
+                  cell: ({ row }) => <div className="text-center font-medium">{row.original.id}</div>
+            },
             {
                   accessorKey: 'name',
                   header: 'Name',
-                  headerClassName: 'w-2/12',
-                  cellClassName: 'font-semibold',
+                  cell: ({ row }) => <div className="font-semibold">{row.original.name}</div>
             },
             {
                   accessorKey: 'slug',
                   header: 'Slug',
-                  headerClassName: 'w-2/12',
-                  cellClassName: 'text-gray-400',
+                  cell: ({ row }) => <div className="text-gray-400">{row.original.slug}</div>
             },
             {
                   accessorKey: 'description',
                   header: 'Description',
-                  headerClassName: 'w-6/12',
-                  cellClassName: 'text-gray-400 text-sm',
-                  cell: ({ row }) => {
-                        const description = row.original.description;
-                        return description ? description.substring(0, 50) + (description.length > 50 ? '...' : '') : '';
-                  },
+                  cell: ({ row }) => <div className="text-gray-400">{row.original.description}</div>
             },
             {
-                  accessorKey: 'language',
-                  header: 'Language',
-                  headerClassName: 'w-1/12',
-                  cellClassName: '',
-                  cell: ({ row }) => {
-                        const lang = row.original.language;
-                        return lang ? lang.name : 'N/A';
-                  },
-            },
-      ];
+                  accessorKey: 'featuredImage',
+                  header: 'Featured Image',
+                  cell: ({ row }) =>
+                        row.original.featuredImage ? (
+                              <Image
+                                    src={row.original.featuredImage}
+                                    alt={row.original.name}
+                                    width={50}
+                                    height={50}
+                                    className="object-cover rounded"
+                              />
+                        ) : (
+                              <div>No image</div>
+                        )
+            }
+      ]
+
+      if (status === 'loading' || loading) {
+            return <div>Loading...</div>
+      }
+      if (error) {
+            return <div>Error: {error}</div>
+      }
+      if (status === 'authenticated' && (session.user as SessionUser).role !== 'admin') {
+            return <div>Unauthorized</div>
+      }
 
       return (
-            <AdminListLayout
-                  title="Tags"
-                  addNewLink="/admin/tags/new"
-                  addNewText="Add New Tag"
-                  columns={columns}
-                  data={tags}
-                  onEdit={handleEdit}
-                  onDelete={deleteTag}
-            />
-      );
+            <div className="container mx-auto py-10">
+                  <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-3xl font-bold">Tag Management</h1>
+                        <Button onClick={() => router.push('/admin/tags/new')}>Add New Tag</Button>
+                  </div>
+                  <TableComponent
+                        columns={columns}
+                        data={tags}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        headerClassName="bg-gray-100 font-bold"
+                        enableCheckbox={true}
+                        frontendLink="/tags"
+                  />
+            </div>
+      )
 }

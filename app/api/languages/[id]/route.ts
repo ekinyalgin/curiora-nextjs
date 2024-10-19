@@ -1,34 +1,39 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-      const session = await getServerSession(authOptions);
-      if (!session || session.user.role !== 1) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const session = await getServerSession(authOptions)
+      if (!session || !session.user || session.user.role !== 'admin') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
-      const language = await prisma.language.findUnique({
-            where: { id: parseInt(params.id) },
-      });
+      try {
+            const language = await prisma.language.findUnique({
+                  where: { id: parseInt(params.id) }
+            })
 
-      if (!language) {
-            return NextResponse.json({ error: 'Language not found' }, { status: 404 });
+            if (!language) {
+                  return NextResponse.json({ error: 'Language not found' }, { status: 404 })
+            }
+
+            return NextResponse.json(language)
+      } catch (error) {
+            console.error('Error fetching language:', error)
+            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
       }
-
-      return NextResponse.json(language);
 }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-      const session = await getServerSession(authOptions);
-      if (!session || session.user.role !== 1) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const session = await getServerSession(authOptions)
+      if (!session || !session.user || session.user.role !== 'admin') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
-      const { code, name, isDefault } = await request.json();
+      const { code, name, isDefault } = await request.json()
       if (!code || !name) {
-            return NextResponse.json({ error: 'Code and name are required' }, { status: 400 });
+            return NextResponse.json({ error: 'Code and name are required' }, { status: 400 })
       }
 
       try {
@@ -37,10 +42,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                   await prisma.language.updateMany({
                         where: {
                               isDefault: true,
-                              id: { not: parseInt(params.id) },
+                              id: { not: parseInt(params.id) }
                         },
-                        data: { isDefault: false },
-                  });
+                        data: { isDefault: false }
+                  })
             }
 
             const updatedLanguage = await prisma.language.update({
@@ -48,26 +53,65 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                   data: {
                         code,
                         name,
-                        isDefault: isDefault || false,
-                  },
-            });
+                        isDefault: isDefault || false
+                  }
+            })
 
-            return NextResponse.json(updatedLanguage);
+            return NextResponse.json(updatedLanguage)
       } catch (error) {
-            console.error('Error updating language:', error);
-            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+            console.error('Error updating language:', error)
+            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
       }
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-      const session = await getServerSession(authOptions);
-      if (!session || session.user.role !== 1) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const session = await getServerSession(authOptions)
+      if (!session || !session.user || session.user.role !== 'admin') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
-      await prisma.language.delete({
-            where: { id: parseInt(params.id) },
-      });
+      try {
+            await prisma.language.delete({
+                  where: { id: parseInt(params.id) }
+            })
 
-      return NextResponse.json({ message: 'Language deleted successfully' });
+            return NextResponse.json({ message: 'Language deleted successfully' })
+      } catch (error) {
+            console.error('Error deleting language:', error)
+            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+      }
+}
+
+export async function POST(request: Request) {
+      const session = await getServerSession(authOptions)
+      if (!session || !session.user || session.user.role !== 'admin') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
+      const { code, name, isDefault } = await request.json()
+      if (!code || !name) {
+            return NextResponse.json({ error: 'Code and name are required' }, { status: 400 })
+      }
+
+      try {
+            // Eğer yeni dil varsayılan olarak ayarlanıyorsa, diğer dillerin varsayılan durumunu kaldır
+            if (isDefault) {
+                  await prisma.language.updateMany({
+                        where: { isDefault: true },
+                        data: { isDefault: false }
+                  })
+            }
+
+            const language = await prisma.language.create({
+                  data: {
+                        code,
+                        name,
+                        isDefault: isDefault || false
+                  }
+            })
+            return NextResponse.json(language)
+      } catch (error) {
+            console.error('Error creating language:', error)
+            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+      }
 }

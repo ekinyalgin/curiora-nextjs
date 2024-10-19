@@ -1,45 +1,108 @@
 'use client'
 
+import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { RelativeDate } from './RelativeDate'
 import UserInfo from './UserInfo'
 import VoteComponent from './VoteComponent'
-import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { Archive, ArchiveRestore, Flag, MessageCircle, Settings2 } from 'lucide-react'
-import CommentSection from './CommentSection'
+import CommentSection from './Comments/CommentSection'
 import { ReportModal } from './ReportModal'
 import { ReportCategory } from '@prisma/client'
 import { Button } from './ui/button'
 import Notification from './Notification'
 import { Tooltip } from './ui/Tooltip'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { tomorrow } from 'react-syntax-highlighter/dist/cjs/styles/prism'
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
-export default function PostComponent({ post, showEditLink = false, onArchive }) {
-      if (!post) return null
+interface Tag {
+      id: number
+      name: string
+      slug: string
+}
 
+interface PostComponentProps {
+      post: {
+            id: number
+            title: string
+            content: string
+            createdAt: string
+            user?: {
+                  name?: string
+                  image?: string
+                  roleName?: string
+            }
+            category?: {
+                  slug: string
+                  name: string
+            }
+            tags?: Tag[]
+            voteCount?: {
+                  upVotes: number
+                  downVotes: number
+            }
+            userVote?: 'upvote' | 'downvote' | null
+            status?: string
+            commentCount?: number
+            comments?: Comment[]
+            featuredImage?: {
+                  filePath: string
+            }
+      }
+      showEditLink?: boolean
+      onArchive?: (post: PostComponentProps['post']) => void
+}
+
+interface Comment {
+      id: number
+      commentText: string
+      status: string
+      isDeleted: boolean
+      createdAt: string
+      user: {
+            id: string
+            name: string
+            image?: string
+      }
+      voteCount?: {
+            upVotes: number
+            downVotes: number
+      }
+      votes?: { voteType: 'upvote' | 'downvote' }[]
+      childComments?: Comment[]
+      userVote?: 'upvote' | 'downvote' | null
+      parentCommentId: number | null
+}
+
+interface CodeInputProps {
+      code: string
+      language: string
+}
+
+const CodeInput: React.FC<CodeInputProps> = ({ code, language }) => {
+      return (
+            <SyntaxHighlighter language={language} style={tomorrow}>
+                  {code}
+            </SyntaxHighlighter>
+      )
+}
+
+export default function PostComponent({ post, showEditLink = false, onArchive }: PostComponentProps) {
       const { data: session } = useSession()
       const [voteCount, setVoteCount] = useState({
             upVotes: post.voteCount?.upVotes || 0,
             downVotes: post.voteCount?.downVotes || 0
       })
-      const [userVote, setUserVote] = useState(post.userVote)
+      const [userVote, setUserVote] = useState<'upvote' | 'downvote' | null>(post.userVote || null)
       const [isArchived, setIsArchived] = useState(post.status === 'archived')
       const [isReportModalOpen, setIsReportModalOpen] = useState(false)
       const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-      const editor = useEditor({
-            extensions: [StarterKit],
-            content: post.content,
-            editable: false
-      })
+      if (!post) return null
 
       const handleVote = async (voteType: 'upvote' | 'downvote' | null) => {
             if (!session || isArchived) {
@@ -145,8 +208,13 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                                     }}
                               />
                               <div className="flex items-center space-x-2 text-xs">
-                                    <RelativeDate className="text-xs" date={post.createdAt} />
-                                    <ReportModal type="post" id={post.id} />
+                                    <RelativeDate date={post.createdAt} />
+                                    <ReportModal
+                                          type="post"
+                                          onSubmit={handleReport}
+                                          isOpen={isReportModalOpen}
+                                          onClose={() => setIsReportModalOpen(false)}
+                                    />
                                     {post.category && (
                                           <Link
                                                 href={`/categories/${post.category.slug}`}
@@ -186,8 +254,8 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                                     <>
                                           <Tooltip content="Flag">
                                                 <Button
-                                                      variant="none"
-                                                      className="text-black py-0 px-1 rounded-sm bg-gray-100 hover:bg-gray-200 "
+                                                      variant="ghost"
+                                                      className="text-black py-0 px-1 rounded-sm bg-gray-100 hover:bg-gray-200"
                                                       onClick={() => setIsReportModalOpen(true)}
                                                 >
                                                       <Flag className="text-black w-4" />
@@ -213,17 +281,13 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                               <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
                                     components={{
-                                          code({ node, inline, className, children, ...props }) {
+                                          code({ className, children, ...props }) {
                                                 const match = /language-(\w+)/.exec(className || '')
-                                                return !inline && match ? (
-                                                      <SyntaxHighlighter
-                                                            style={tomorrow}
-                                                            language={match[1]}
-                                                            PreTag="div"
-                                                            {...props}
-                                                      >
-                                                            {String(children).replace(/\n$/, '')}
-                                                      </SyntaxHighlighter>
+                                                const language = match ? match[1] : ''
+                                                const code = String(children).replace(/\n$/, '')
+
+                                                return match ? (
+                                                      <CodeInput code={code} language={language} />
                                                 ) : (
                                                       <code className={className} {...props}>
                                                             {children}
@@ -251,7 +315,7 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
                         <div className="space-x-2">
                               <span className="text-xs text-gray-400">Tags:</span>
                               {post.tags &&
-                                    post.tags.map((tag, index) => (
+                                    post.tags.map((tag: Tag) => (
                                           <Link
                                                 key={tag.id}
                                                 href={`/tags/${tag.slug}`}
@@ -264,21 +328,21 @@ export default function PostComponent({ post, showEditLink = false, onArchive })
 
                         <div className="flex items-center space-x-4">
                               <VoteComponent
-                                    itemId={post.id}
+                                    itemId={post.id.toString()}
                                     itemType="post"
                                     initialUpVotes={voteCount.upVotes}
                                     initialDownVotes={voteCount.downVotes}
-                                    userVote={userVote}
+                                    userVote={userVote || null}
                                     onVote={handleVote}
                                     isDisabled={isArchived}
                               />
                               <span className="text-sm text-gray-800 flex items-center font-semibold">
-                                    <MessageCircle className="w-4 mr-1" /> {post.commentCount}
+                                    <MessageCircle className="w-4 mr-1" /> {post.commentCount || 0}
                               </span>
                         </div>
                   </article>
                   <CommentSection
-                        comments={post.comments}
+                        initialComments={post.comments || []}
                         postId={post.id}
                         isAdmin={showEditLink}
                         isArchived={isArchived}

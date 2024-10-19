@@ -2,45 +2,48 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import CommentItem from './CommentItem'
+import CommentItem from './Comments/CommentItem'
 import SignInModal from './auth/SignInModal'
-import CommentSearch from './CommentSearch'
+import CommentSearch from './Comments/CommentSearch'
 import CommentSort from './CommentSort'
-import CommentForm from './CommentForm'
+import CommentForm from './Comments/CommentForm'
 import { Archive } from 'lucide-react'
 
-interface Comment {
-      id: number
-      commentText: string
-      createdAt: string
-      status: 'pending' | 'approved' | 'archived'
-      user: {
-            name: string
-            image?: string
-      }
-      childComments?: Comment[]
-      parentCommentId: number | null
-}
-
 interface CommentSectionProps {
-      comments: Comment[]
+      initialComments: Comment[]
       postId: number
       isAdmin: boolean
       isArchived: boolean
 }
 
-export default function CommentSection({
-      comments: initialComments,
-      postId,
-      isAdmin,
-      isArchived
-}: CommentSectionProps) {
+// @/types/comment'ten import etmek yerine burada tanımlayalım
+interface Comment {
+      id: number
+      commentText: string
+      status: string
+      isDeleted: boolean
+      createdAt: string
+      user: {
+            id: string
+            name: string
+            image?: string
+      }
+      voteCount?: {
+            upVotes: number
+            downVotes: number
+      }
+      votes?: { voteType: 'upvote' | 'downvote' }[]
+      childComments?: Comment[]
+      userVote?: 'upvote' | 'downvote' | null
+      parentCommentId: number | null
+}
+
+export default function CommentSection({ initialComments, postId, isAdmin, isArchived }: CommentSectionProps) {
       const { data: session } = useSession()
       const [comments, setComments] = useState<Comment[]>([])
       const [filteredComments, setFilteredComments] = useState<Comment[]>([])
       const [showSignInModal, setShowSignInModal] = useState(false)
       const [activeTextarea, setActiveTextarea] = useState<string | null>(null)
-      const [searchTerm, setSearchTerm] = useState('')
       const [sortOption, setSortOption] = useState<'best' | 'new' | 'old' | 'controversial'>('best')
 
       useEffect(() => {
@@ -73,7 +76,7 @@ export default function CommentSection({
                         },
                         body: JSON.stringify({
                               postId,
-                              userId: session.user.id,
+                              userId: session?.user?.id,
                               commentText: newComment,
                               status: isAdmin ? 'approved' : 'pending'
                         })
@@ -93,6 +96,11 @@ export default function CommentSection({
       }
 
       const handleReply = async (parentId: number, replyText: string) => {
+            if (!session || !session.user) {
+                  console.error('User session is not available')
+                  return
+            }
+
             try {
                   const response = await fetch('/api/comments', {
                         method: 'POST',
@@ -211,7 +219,7 @@ export default function CommentSection({
             }
       }
 
-      const updateCommentInList = (commentList: Comment[], updatedComment: Comment) => {
+      const updateCommentInList = (commentList: Comment[], updatedComment: Partial<Comment>) => {
             return commentList.map((comment) => {
                   if (comment.id === updatedComment.id) {
                         return { ...comment, ...updatedComment }
@@ -219,7 +227,7 @@ export default function CommentSection({
                   if (comment.childComments) {
                         return {
                               ...comment,
-                              childComments: comment.childComments.map((childComment) =>
+                              childComments: comment.childComments.map((childComment: Comment) =>
                                     childComment.id === updatedComment.id
                                           ? { ...childComment, ...updatedComment }
                                           : childComment
@@ -231,7 +239,6 @@ export default function CommentSection({
       }
 
       const handleSearch = (term: string) => {
-            setSearchTerm(term)
             if (!term) {
                   setFilteredComments(comments)
             } else {
@@ -239,7 +246,7 @@ export default function CommentSection({
                         (comment) =>
                               comment.commentText.toLowerCase().includes(term.toLowerCase()) ||
                               (comment.childComments &&
-                                    comment.childComments.some((child) =>
+                                    comment.childComments.some((child: Comment) =>
                                           child.commentText.toLowerCase().includes(term.toLowerCase())
                                     ))
                   )
@@ -249,19 +256,27 @@ export default function CommentSection({
 
       const handleSort = (option: 'best' | 'new' | 'old' | 'controversial') => {
             setSortOption(option)
-            let sorted = [...filteredComments]
+            const sorted = [...filteredComments]
             switch (option) {
                   case 'best':
-                        sorted.sort((a, b) => (b.voteCount?.upVotes || 0) - (a.voteCount?.upVotes || 0))
+                        sorted.sort(
+                              (a: Comment, b: Comment) => (b.voteCount?.upVotes || 0) - (a.voteCount?.upVotes || 0)
+                        )
                         break
                   case 'new':
-                        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                        sorted.sort(
+                              (a: Comment, b: Comment) =>
+                                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                        )
                         break
                   case 'old':
-                        sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                        sorted.sort(
+                              (a: Comment, b: Comment) =>
+                                    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                        )
                         break
                   case 'controversial':
-                        sorted.sort((a, b) => {
+                        sorted.sort((a: Comment, b: Comment) => {
                               const aScore = (a.voteCount?.downVotes || 0) / (a.voteCount?.upVotes || 1)
                               const bScore = (b.voteCount?.downVotes || 0) / (b.voteCount?.upVotes || 1)
                               return bScore - aScore
@@ -371,7 +386,7 @@ export default function CommentSection({
                         filteredComments.map((comment) => (
                               <CommentItem
                                     key={comment.id}
-                                    comment={comment}
+                                    comment={comment as Comment}
                                     postId={postId}
                                     onReply={handleReply}
                                     onEdit={handleEdit}
@@ -391,6 +406,7 @@ export default function CommentSection({
                                                 updateCommentInList(prevComments, updatedComment)
                                           )
                                     }}
+                                    onDelete={handleDelete}
                               />
                         ))
                   ) : (

@@ -1,28 +1,27 @@
 'use client'
+import React from 'react'
 import { useState, useEffect } from 'react'
 import { ArrowBigUp, ArrowBigDown } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { Tooltip } from './ui/Tooltip'
 
 interface VoteComponentProps {
-      itemId: number
-      itemType: 'post' | 'comment'
+      itemId: string
+      itemType: string
       initialUpVotes: number
       initialDownVotes: number
-      userVote?: 'upvote' | 'downvote' | null
+      userVote: 'upvote' | 'downvote' | null
       onVote: (voteType: 'upvote' | 'downvote' | null) => Promise<void>
-      isDisabled?: boolean
+      isDisabled: boolean
 }
 
-export default function VoteComponent({
-      itemId,
-      itemType,
+const VoteComponent: React.FC<VoteComponentProps> = ({
       initialUpVotes,
       initialDownVotes,
       userVote: initialUserVote,
       onVote,
-      isDisabled = false
-}: VoteComponentProps) {
+      isDisabled
+}) => {
       const [upVotes, setUpVotes] = useState(initialUpVotes)
       const [downVotes, setDownVotes] = useState(initialDownVotes)
       const [userVote, setUserVote] = useState(initialUserVote)
@@ -93,3 +92,5 @@ export default function VoteComponent({
             </div>
       )
 }
+
+export default VoteComponent

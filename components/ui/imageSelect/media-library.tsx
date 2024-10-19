@@ -1,50 +1,58 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { Button } from '../button'
 import { Input } from '../input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select'
-import { Grid, List, Search, Trash } from 'lucide-react'
+import { Grid, List, Trash } from 'lucide-react'
 
-export function MediaLibrary({
-      onSelect,
-      onDelete,
-      selectedImageId
-}: {
-      onSelect: (image: any) => void
+// Define a type for the media item
+type MediaItem = {
+      id: number
+      filePath: string
+      fileName: string
+      fileType: string
+      fileSize: number
+      createdAt: string
+}
+
+type MediaLibraryProps = {
+      onSelect: (image: MediaItem) => void
       onDelete: (id: number) => void
       selectedImageId?: number
-}) {
-      const [media, setMedia] = useState([])
+}
+
+export function MediaLibrary({ onSelect, onDelete, selectedImageId }: MediaLibraryProps) {
+      const [media, setMedia] = useState<MediaItem[]>([])
       const [searchTerm, setSearchTerm] = useState('')
       const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
       const [folders, setFolders] = useState<string[]>([])
       const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
-      const [selectedMediaItem, setSelectedMediaItem] = useState<any>(null)
+      const [selectedMediaItem, setSelectedMediaItem] = useState<MediaItem | null>(null)
 
-      useEffect(() => {
-            fetchFolders()
-      }, [])
-
-      useEffect(() => {
-            fetchMedia()
+      const fetchMedia = useCallback(async () => {
+            const response = await fetch(`/api/media?search=${searchTerm}&folder=${selectedFolder || ''}`)
+            const data = await response.json()
+            setMedia(data)
       }, [searchTerm, selectedFolder])
 
       useEffect(() => {
+            fetchMedia()
+      }, [fetchMedia])
+
+      useEffect(() => {
             if (selectedImageId) {
-                  const selectedImage = media.find((item: any) => item.id === selectedImageId)
+                  const selectedImage = media.find((item: MediaItem) => item.id === selectedImageId)
                   if (selectedImage) {
                         setSelectedMediaItem(selectedImage)
                   }
             }
       }, [selectedImageId, media])
 
-      async function fetchMedia() {
-            const response = await fetch(`/api/media?search=${searchTerm}&folder=${selectedFolder || ''}`)
-            const data = await response.json()
-            setMedia(data)
-      }
+      useEffect(() => {
+            fetchFolders()
+      }, [])
 
       async function fetchFolders() {
             const response = await fetch('/api/media/folders')
@@ -73,7 +81,7 @@ export function MediaLibrary({
                                     type="text"
                                     placeholder="Search media..."
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                               />
                               <Select value={selectedFolder || ''} onValueChange={setSelectedFolder}>
                                     <SelectTrigger>
@@ -103,7 +111,7 @@ export function MediaLibrary({
                                     viewMode === 'grid' ? 'grid grid-cols-4 gap-4' : 'space-y-2'
                               } flex-grow overflow-y-auto pr-4`}
                         >
-                              {media.map((item: any) =>
+                              {media.map((item: MediaItem) =>
                                     viewMode === 'grid' ? (
                                           <div
                                                 key={item.id}

@@ -1,16 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AdminFormLayout } from '@/components/ui/admin-form-layout'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LanguageSelect } from '@/components/ui/language-select'
-import { FeaturedImageSelect } from '@/components/ui/imageSelect/image-select'
+import { ImageSelect } from '@/components/ui/imageSelect/image-select'
 import { TagInput } from '@/components/ui/tag-input'
 import { SlugInput, createSlug } from '@/components/ui/slug-input'
 import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils'
+import Editor from '@/components/Editor'
+import { FeaturedImageSelect } from '@/components/FeaturedImageSelect'
 
 export default function NewPost() {
       const [post, setPost] = useState({
@@ -25,10 +26,13 @@ export default function NewPost() {
             seoTitle: '',
             seoDescription: '',
             featuredImageId: null as number | null,
+            featuredImage: null as string | null,
             tags: [] as string[]
       })
       const [users, setUsers] = useState([])
       const [categories, setCategories] = useState([])
+      const [showImageSelect, setShowImageSelect] = useState(false)
+      const [showEditorImageSelect, setShowEditorImageSelect] = useState(false)
       const router = useRouter()
 
       useEffect(() => {
@@ -51,12 +55,11 @@ export default function NewPost() {
       const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault()
             try {
-                  let postToSubmit = { ...post }
+                  const postToSubmit = { ...post }
                   if (!postToSubmit.slug) {
                         postToSubmit.slug = createSlug(postToSubmit.title)
                   }
 
-                  // Slug benzersizliğini kontrol et
                   const isUnique = await checkSlugUniqueness(postToSubmit.slug, 'post')
                   if (!isUnique) {
                         postToSubmit.slug = await generateUniqueSlug(postToSubmit.slug, 'post')
@@ -69,7 +72,8 @@ export default function NewPost() {
                               ...postToSubmit,
                               user: { id: postToSubmit.userId },
                               category: { id: postToSubmit.categoryId },
-                              language: { id: postToSubmit.languageId }
+                              language: { id: postToSubmit.languageId },
+                              featuredImage: { id: postToSubmit.featuredImageId }
                         })
                   })
 
@@ -78,8 +82,8 @@ export default function NewPost() {
                   }
 
                   router.push('/admin/posts')
-            } catch (err) {
-                  console.error('Error creating post:', err)
+            } catch (error) {
+                  console.error('Error creating post:', error)
                   alert('Failed to create post. Please try again.')
             }
       }
@@ -88,8 +92,21 @@ export default function NewPost() {
             setPost((prev) => ({ ...prev, [name]: value }))
       }
 
-      const handleFeaturedImageSelect = (imageId: number | null) => {
-            setPost((prev) => ({ ...prev, featuredImageId: imageId }))
+      const handleFeaturedImageSelect = (image: { filePath: string; id: number }) => {
+            setPost((prev) => ({
+                  ...prev,
+                  featuredImageId: image.id,
+                  featuredImage: image.filePath
+            }))
+            setShowImageSelect(false)
+      }
+
+      const handleRemoveFeaturedImage = () => {
+            setPost((prev) => ({
+                  ...prev,
+                  featuredImageId: null,
+                  featuredImage: null
+            }))
       }
 
       const handleTagsChange = (newTags: string[]) => {
@@ -105,7 +122,6 @@ export default function NewPost() {
             >
                   <Input
                         name="title"
-                        label="Title"
                         value={post.title}
                         onChange={(e) => handleInputChange('title', e.target.value)}
                         placeholder="Enter post title"
@@ -113,21 +129,15 @@ export default function NewPost() {
                   />
                   <SlugInput
                         name="slug"
-                        label="Slug"
                         value={post.slug}
                         onChange={handleInputChange}
                         sourceValue={post.title}
                         placeholder="Enter slug or leave empty to generate automatically"
                         autoGenerate={false}
                   />
-                  <Textarea
-                        name="content"
-                        label="Content"
-                        value={post.content}
-                        onChange={handleInputChange}
-                        placeholder="Enter post content"
-                        required
-                  />
+
+                  <Editor content={post.content} onChange={(content) => setPost({ ...post, content })} />
+
                   <Select
                         value={post.status}
                         onValueChange={(value) => setPost((prev) => ({ ...prev, status: value }))}
@@ -158,7 +168,7 @@ export default function NewPost() {
                               <SelectValue placeholder="Select user" />
                         </SelectTrigger>
                         <SelectContent>
-                              {users.map((user: any) => (
+                              {users.map((user: { id: string; name: string }) => (
                                     <SelectItem key={user.id} value={user.id}>
                                           {user.name}
                                     </SelectItem>
@@ -173,7 +183,7 @@ export default function NewPost() {
                               <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                              {categories.map((category: any) => (
+                              {categories.map((category: { id: number; name: string }) => (
                                     <SelectItem key={category.id} value={category.id.toString()}>
                                           {category.name}
                                     </SelectItem>
@@ -184,20 +194,44 @@ export default function NewPost() {
                         value={post.languageId}
                         onChange={(value) => setPost((prev) => ({ ...prev, languageId: value }))}
                   />
-                  <FeaturedImageSelect value={post.featuredImageId} onChange={handleFeaturedImageSelect} />
+                  <FeaturedImageSelect
+                        featuredImage={post.featuredImage}
+                        featuredImageId={post.featuredImageId}
+                        onSelectImage={() => setShowImageSelect(true)}
+                        onRemoveImage={handleRemoveFeaturedImage}
+                  />
+
+                  <ImageSelect
+                        value={post.featuredImageId}
+                        onSelect={handleFeaturedImageSelect}
+                        isOpen={showImageSelect}
+                        onClose={() => setShowImageSelect(false)}
+                  />
+
+                  {showEditorImageSelect && (
+                        <ImageSelect
+                              onSelect={(image) => {
+                                    setPost((prev) => ({
+                                          ...prev,
+                                          content: prev.content + `\n![Alt text](${image.filePath})`
+                                    }))
+                                    setShowEditorImageSelect(false)
+                              }}
+                              onClose={() => setShowEditorImageSelect(false)}
+                              isOpen={showEditorImageSelect}
+                        />
+                  )}
                   <TagInput tags={post.tags} setTags={handleTagsChange} />
                   <Input
                         name="seoTitle"
-                        label="SEO Title"
                         value={post.seoTitle}
-                        onChange={handleInputChange}
+                        onChange={(e) => handleInputChange('seoTitle', e.target.value)}
                         placeholder="Enter SEO title"
                   />
-                  <Textarea
+                  <Input
                         name="seoDescription"
-                        label="SEO Description"
                         value={post.seoDescription}
-                        onChange={handleInputChange}
+                        onChange={(e) => handleInputChange('seoDescription', e.target.value)}
                         placeholder="Enter SEO description"
                   />
             </AdminFormLayout>

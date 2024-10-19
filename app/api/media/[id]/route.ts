@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createReadStream } from 'fs'
 import { join } from 'path'
-import { stat } from 'fs/promises'
+import { stat, unlink, rename } from 'fs/promises'
+import { Readable } from 'stream'
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -21,8 +22,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
       try {
             const stats = await stat(filePath)
             const fileStream = createReadStream(filePath)
+            const webReadableStream = Readable.toWeb(fileStream) as ReadableStream
 
-            return new NextResponse(fileStream as any, {
+            return new NextResponse(webReadableStream, {
                   headers: {
                         'Content-Type': media.fileType,
                         'Content-Length': stats.size.toString()
@@ -48,19 +50,18 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
             // Dosyayı silmeyi dene
             try {
-                  await delay(1000) // 1 saniye bekle
+                  await delay(1000) // 1 second delay
                   await unlink(filePath)
             } catch (unlinkError) {
                   console.error('Error deleting file:', unlinkError)
 
-                  // Dosyayı silme başarısız olursa, yeniden adlandırmayı dene
+                  // If deleting fails, try renaming
                   const newPath = `${filePath}.deleted`
                   try {
                         await rename(filePath, newPath)
                         console.log('File renamed instead of deleted')
                   } catch (renameError) {
                         console.error('Error renaming file:', renameError)
-                        // Hem silme hem de yeniden adlandırma başarısız olursa, sadece veritabanı kaydını sil
                         console.warn('Could not delete or rename file, but will remove database entry')
                   }
             }

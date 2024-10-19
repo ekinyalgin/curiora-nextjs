@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
       const session = await getServerSession(authOptions)
@@ -18,7 +18,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                   return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
             }
 
-            if (comment.userId !== session.user.id && session.user.role !== 'admin' && session.user.role !== 1) {
+            if (comment.userId !== session.user.id && session.user.role !== 'admin') {
                   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
             }
 

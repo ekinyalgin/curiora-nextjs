@@ -49,7 +49,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
       try {
             const body = await request.json()
-            const { user, category, language, tags, featuredImage, id: postId, ...postData } = body
+            const { user, category, language, tags, featuredImage, ...postData } = body
 
             if (!user || !category || !language) {
                   return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -80,7 +80,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                               }))
                         }
                   },
-
                   include: {
                         user: { include: { role: true } },
                         category: true,

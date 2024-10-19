@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { FaSearch, FaTimes } from 'react-icons/fa'
 import { Search, X } from 'lucide-react'
 
 interface CommentSearchProps {

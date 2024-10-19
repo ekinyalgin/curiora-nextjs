@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { AdminFormLayout } from '@/components/ui/admin-form-layout'
 import { Input } from '@/components/ui/input'
@@ -11,8 +11,7 @@ import { TagInput } from '@/components/ui/tag-input'
 import { SlugInput, createSlug } from '@/components/ui/slug-input'
 import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils'
 import Editor from '@/components/Editor'
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+import { FeaturedImageSelect } from '@/components/FeaturedImageSelect'
 
 export default function EditPost({ params }: { params: { id: string } }) {
       const [post, setPost] = useState({
@@ -38,21 +37,8 @@ export default function EditPost({ params }: { params: { id: string } }) {
       const router = useRouter()
       const id = parseInt(params.id)
 
-      useEffect(() => {
-            const fetchData = async () => {
-                  setIsLoading(true)
-                  try {
-                        await Promise.all([fetchPost(), fetchUsers(), fetchCategories()])
-                  } catch (error) {
-                        console.error('Error fetching data:', error)
-                  } finally {
-                        setIsLoading(false)
-                  }
-            }
-            fetchData()
-      }, [id])
-
-      async function fetchPost() {
+      const fetchPost = useCallback(async () => {
+            setIsLoading(true)
             const response = await fetch(`/api/posts/${id}`)
             if (!response.ok) {
                   throw new Error('Failed to fetch post')
@@ -67,24 +53,33 @@ export default function EditPost({ params }: { params: { id: string } }) {
                   featuredImage: data.featuredImage,
                   tags: data.tags ? data.tags.map((tag: { name: string }) => tag.name) : []
             })
-      }
+            setIsLoading(false)
+      }, [id])
 
-      async function fetchUsers() {
+      const fetchUsers = useCallback(async () => {
             const response = await fetch('/api/users')
             const data = await response.json()
             setUsers(data)
-      }
+      }, [])
 
-      async function fetchCategories() {
+      const fetchCategories = useCallback(async () => {
             const response = await fetch('/api/categories')
             const data = await response.json()
             setCategories(data)
-      }
+      }, [])
+
+      useEffect(() => {
+            if (id) {
+                  fetchPost()
+            }
+            fetchUsers()
+            fetchCategories()
+      }, [id, fetchPost, fetchUsers, fetchCategories])
 
       const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault()
             try {
-                  let postToSubmit = { ...post }
+                  const postToSubmit = { ...post }
                   if (!postToSubmit.slug) {
                         postToSubmit.slug = createSlug(postToSubmit.title)
                   }
@@ -111,8 +106,8 @@ export default function EditPost({ params }: { params: { id: string } }) {
                   }
 
                   router.push('/admin/posts')
-            } catch (err) {
-                  console.error('Error updating post:', err)
+            } catch (error) {
+                  console.error('Error updating post:', error)
                   alert('Failed to update post. Please try again.')
             }
       }
@@ -142,6 +137,14 @@ export default function EditPost({ params }: { params: { id: string } }) {
             setShowEditorImageSelect(false)
       }
 
+      const handleRemoveFeaturedImage = () => {
+            setPost((prev) => ({
+                  ...prev,
+                  featuredImageId: null,
+                  featuredImage: '' // null yerine boş string kullanıyoruz
+            }))
+      }
+
       if (isLoading) {
             return <div>Loading...</div>
       }
@@ -150,7 +153,6 @@ export default function EditPost({ params }: { params: { id: string } }) {
             <AdminFormLayout title="Edit Post" backLink="/admin/posts" onSubmit={handleSubmit} submitText="Update Post">
                   <Input
                         name="title"
-                        label="Title"
                         value={post.title}
                         onChange={(e) => handleInputChange('title', e.target.value)}
                         placeholder="Enter post title"
@@ -158,7 +160,6 @@ export default function EditPost({ params }: { params: { id: string } }) {
                   />
                   <SlugInput
                         name="slug"
-                        label="Slug"
                         value={post.slug}
                         onChange={handleInputChange}
                         sourceValue={post.title}
@@ -166,11 +167,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         autoGenerate={false}
                   />
 
-                  <Editor
-                        content={post.content}
-                        onChange={(content) => setPost({ ...post, content })}
-                        onImageButtonClick={() => setShowEditorImageSelect(true)}
-                  />
+                  <Editor content={post.content} onChange={(content) => setPost({ ...post, content })} />
 
                   <Select
                         value={post.status}
@@ -202,7 +199,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                               <SelectValue placeholder="Select user" />
                         </SelectTrigger>
                         <SelectContent>
-                              {users.map((user: any) => (
+                              {users.map((user: { id: string; name: string }) => (
                                     <SelectItem key={user.id} value={user.id}>
                                           {user.name}
                                     </SelectItem>
@@ -217,7 +214,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
                               <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                              {categories.map((category: any) => (
+                              {categories.map((category: { id: number; name: string }) => (
                                     <SelectItem key={category.id} value={category.id.toString()}>
                                           {category.name}
                                     </SelectItem>
@@ -228,23 +225,12 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         value={post.languageId}
                         onChange={(value) => setPost((prev) => ({ ...prev, languageId: value }))}
                   />
-                  <div>
-                        <label className="block text-sm font-medium text-gray-700">Featured Image</label>
-                        {post.featuredImage && (
-                              <div className="mt-2">
-                                    <Image
-                                          src={post.featuredImage}
-                                          alt="Featured Image"
-                                          width={200}
-                                          height={200}
-                                          className="object-cover rounded-md"
-                                    />
-                              </div>
-                        )}
-                        <Button type="button" onClick={() => setShowImageSelect(true)} className="mt-2">
-                              {post.featuredImageId ? 'Change' : 'Select'} Featured Image
-                        </Button>
-                  </div>
+                  <FeaturedImageSelect
+                        featuredImage={post.featuredImage}
+                        featuredImageId={post.featuredImageId}
+                        onSelectImage={() => setShowImageSelect(true)}
+                        onRemoveImage={handleRemoveFeaturedImage}
+                  />
 
                   <ImageSelect
                         value={post.featuredImageId}
@@ -263,14 +249,12 @@ export default function EditPost({ params }: { params: { id: string } }) {
                   <TagInput tags={post.tags} setTags={handleTagsChange} />
                   <Input
                         name="seoTitle"
-                        label="SEO Title"
                         value={post.seoTitle}
                         onChange={(e) => handleInputChange('seoTitle', e.target.value)}
                         placeholder="Enter SEO title"
                   />
                   <Input
                         name="seoDescription"
-                        label="SEO Description"
                         value={post.seoDescription}
                         onChange={(e) => handleInputChange('seoDescription', e.target.value)}
                         placeholder="Enter SEO description"

@@ -6,9 +6,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import AdminHeader from '@/components/AdminHeader'
-import { FileText } from 'lucide-react'
-import { Users } from 'lucide-react'
-import { MessageSquare } from 'lucide-react'
+import { FileText, Users, MessageSquare } from 'lucide-react'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
       const { data: session, status } = useSession()
@@ -17,7 +15,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       useEffect(() => {
             if (status === 'loading') return
-            if (!session || session.user?.role !== 1) {
+            if (!session || session.user?.role !== 'admin') {
                   router.push('/')
             } else {
                   setIsLoading(false)
@@ -28,7 +26,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             return <div>Loading...</div>
       }
 
-      if (!session || session.user?.role !== 1) {
+      if (!session || session.user?.role !== 'admin') {
             return null
       }
 
@@ -91,7 +89,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       ]
 
       return (
-            <div className="flex flex-col h-screen bg-gray-100">
+            <div className="flex flex-col h-screen bg-gray-50">
                   <AdminHeader />
                   <div className="flex flex-1">
                         <aside className="w-40 bg-white text-sm">
@@ -110,7 +108,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                                     </Link>
                               </nav>
                         </aside>
-                        <main className="flex-1 p-8 overflow-y-auto">{children}</main>
+                        <main className="container p-8 overflow-y-auto">{children}</main>
                   </div>
             </div>
       )

@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
-import Editor from './Editor'
+import React, { useState } from 'react'
+import Editor from '../Editor'
 
 interface CommentFormProps {
       onSubmit: (comment: string) => Promise<void>

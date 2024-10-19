@@ -1,11 +1,27 @@
 import { prisma } from '@/lib/prisma'
 import PostComponent from '@/components/PostComponent'
-import CommentSection from '@/components/CommentSection'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 import { notFound } from 'next/navigation'
 import Loading from '@/components/Loading'
 import { Suspense } from 'react'
+
+// Comment tipini güncelleyelim
+interface Comment {
+      id: number
+      content: string // Bu alanı ekledik
+      createdAt: string
+      user: {
+            id: string
+            name: string
+            image?: string
+      }
+      userVote?: 'upvote' | 'downvote' | null
+      commentText: string
+      status: string
+      isDeleted: boolean
+      parentCommentId: number | null
+}
 
 export default async function PostPage({ params }: { params: { slug: string } }) {
       return (
@@ -41,7 +57,7 @@ async function PostContent({ slug }: { slug: string }) {
                                             }
                                           : false
                               },
-                              ...(session?.user?.role === 'admin' || session?.user?.role === 1
+                              ...(session?.user?.role === 'admin' || session?.user?.role === 'admin'
                                     ? {}
                                     : { where: { status: 'approved' } }),
                               orderBy: { createdAt: 'desc' }
@@ -63,21 +79,39 @@ async function PostContent({ slug }: { slug: string }) {
             notFound()
       }
 
-      const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 1
-      const isArchived = post.status === 'archived'
+      const isAdmin = session?.user?.role === 'admin'
 
-      // Transform the post to include roleName and userVote
       const transformedPost = {
             ...post,
+            id: post.id,
+            createdAt: post.createdAt.toISOString(),
             user: {
-                  ...post.user,
+                  name: post.user.name || 'Unknown User',
+                  image: post.user.image || undefined,
                   roleName: post.user.role?.name || 'User'
             },
+            category: post.category ? { slug: post.category.slug, name: post.category.name } : undefined,
+            voteCount: post.voteCount
+                  ? { upVotes: post.voteCount.upVotes, downVotes: post.voteCount.downVotes }
+                  : undefined,
             userVote: post.votes && post.votes.length > 0 ? post.votes[0].voteType : null,
-            comments: post.comments.map((comment) => ({
-                  ...comment,
-                  userVote: comment.votes && comment.votes.length > 0 ? comment.votes[0].voteType : null
-            }))
+            comments: post.comments.map(
+                  (comment): Comment => ({
+                        id: comment.id,
+                        content: comment.commentText,
+                        commentText: comment.commentText,
+                        status: comment.status,
+                        isDeleted: comment.isDeleted,
+                        createdAt: comment.createdAt.toISOString(),
+                        user: {
+                              id: comment.user.id,
+                              name: comment.user.name || 'Unknown User', // Varsayılan değer ekledik
+                              image: comment.user.image || undefined // undefined olarak bırakıyoruz eğer null ise
+                        },
+                        userVote: comment.votes && comment.votes.length > 0 ? comment.votes[0].voteType : null,
+                        parentCommentId: comment.parentCommentId
+                  })
+            )
       }
 
       return (

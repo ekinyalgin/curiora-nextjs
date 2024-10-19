@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { AdminListLayout } from '@/components/ui/admin-list-layout'
+import { useState, useEffect, useCallback } from 'react'
+//import { AdminListLayout } from '@/components/ui/admin-list-layout'
 import { useSession } from 'next-auth/react'
 import { ReportCategory } from '@prisma/client'
 import { ColumnDef } from '@tanstack/react-table'
@@ -20,9 +20,10 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TableComponent } from '@/components/TableComponent'
 
 interface Report {
-      id: string
+      id: number
       category: ReportCategory
       description: string
       createdAt: string
@@ -51,29 +52,38 @@ export default function ReportsPanel() {
       const { data: session, status } = useSession()
       const [reports, setReports] = useState<Report[]>([])
       const [activeTab, setActiveTab] = useState<'comment' | 'post'>('comment')
+      const [isHardDeleteConfirmation, setIsHardDeleteConfirmation] = useState<{ [key: string]: boolean }>({})
 
-      useEffect(() => {
-            if (status !== 'loading') {
-                  fetchReports()
-            }
-      }, [status, activeTab])
-
-      const fetchReports = async () => {
+      const fetchReports = useCallback(async () => {
             try {
                   const response = await fetch(`/api/reports?filter=${activeTab}`)
                   if (!response.ok) {
                         throw new Error('Failed to fetch reports')
                   }
-                  const data = await response.json()
+                  const data: Report[] = await response.json() // Tip belirtildi
                   setReports(data)
             } catch (error) {
                   console.error('Error fetching reports:', error)
             }
-      }
+      }, [activeTab])
+
+      useEffect(() => {
+            if (status !== 'loading') {
+                  fetchReports()
+            }
+      }, [status, activeTab, fetchReports])
 
       const handleCommentAction = async (
             commentId: string,
-            action: 'approve' | 'pending' | 'archive' | 'softDelete' | 'hardDelete' | 'restoreDeleted'
+            action:
+                  | 'approve'
+                  | 'pending'
+                  | 'archive'
+                  | 'softDelete'
+                  | 'hardDelete'
+                  | 'reject'
+                  | 'delete'
+                  | 'restoreDeleted'
       ) => {
             try {
                   const response = await fetch(`/api/comments/${commentId}`, {
@@ -95,7 +105,7 @@ export default function ReportsPanel() {
                   const response = await fetch(`/api/posts/${postId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: action })
+                        body: JSON.stringify({ status: action === 'publish' ? 'published' : 'draft' })
                   })
                   if (!response.ok) {
                         throw new Error('Failed to update post status')
@@ -106,27 +116,25 @@ export default function ReportsPanel() {
             }
       }
 
-      const handleReportAction = async (
-            reportId: string,
-            commentId: string,
-            action: 'approve' | 'pending' | 'archive' | 'softDelete' | 'hardDelete'
-      ) => {
+      const handleReportAction = async (reportId: string, commentId: string, action: string) => {
             try {
-                  await handleCommentAction(commentId, action)
-                  if (action === 'hardDelete') {
-                        await handleDeleteReport(reportId)
+                  await handleCommentAction(commentId, action as (typeof handleCommentAction.arguments)[1])
+                  const response = await fetch(`/api/reports/${reportId}`, {
+                        method: 'DELETE'
+                  })
+                  if (!response.ok) {
+                        throw new Error('Failed to delete report')
                   }
                   await fetchReports()
             } catch (error) {
-                  console.error('Error updating comment status:', error)
+                  console.error('Error handling report action:', error)
             }
       }
 
       const handleDeleteReport = async (reportId: string) => {
             try {
                   const response = await fetch(`/api/reports/${reportId}`, {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' }
+                        method: 'DELETE'
                   })
                   if (!response.ok) {
                         throw new Error('Failed to delete report')
@@ -139,16 +147,9 @@ export default function ReportsPanel() {
 
       const handleHardDeleteConfirmation = async (reportId: string, commentId: string) => {
             try {
-                  // Önce yorumu sil
                   await handleCommentAction(commentId, 'hardDelete')
-
-                  // Biraz bekle
-                  await new Promise((resolve) => setTimeout(resolve, 1500))
-
-                  // Sonra raporu sil
                   await handleDeleteReport(reportId)
-
-                  await fetchReports()
+                  setIsHardDeleteConfirmation((prev) => ({ ...prev, [commentId]: false }))
             } catch (error) {
                   console.error('Error hard deleting comment:', error)
             }
@@ -201,7 +202,7 @@ export default function ReportsPanel() {
                                           onClick={() =>
                                                 handlePostAction(
                                                       report.postId!,
-                                                      postStatus === 'published' ? 'draft' : 'published'
+                                                      postStatus === 'published' ? 'draft' : 'publish'
                                                 )
                                           }
                                           className="p-1 rounded bg-blue-100 hover:bg-blue-200"
@@ -214,21 +215,27 @@ export default function ReportsPanel() {
                                           )}
                                     </button>
                                     <button
-                                          onClick={() => handleReportAction(report.id, 'approve')}
+                                          onClick={() =>
+                                                handleReportAction(report.id.toString(), report.commentId!, 'approve')
+                                          }
                                           className="p-1 rounded bg-green-100 hover:bg-green-200"
                                           title="Approve Report"
                                     >
                                           <Check className="w-4 h-4 text-green-600" />
                                     </button>
                                     <button
-                                          onClick={() => handleReportAction(report.id, 'reject')}
+                                          onClick={() =>
+                                                handleReportAction(report.id.toString(), report.commentId!, 'reject')
+                                          }
                                           className="p-1 rounded bg-red-100 hover:bg-red-200"
                                           title="Reject Report"
                                     >
                                           <X className="w-4 h-4 text-red-600" />
                                     </button>
                                     <button
-                                          onClick={() => handleReportAction(report.id, 'delete')}
+                                          onClick={() =>
+                                                handleReportAction(report.id.toString(), report.commentId!, 'delete')
+                                          }
                                           className="p-1 rounded bg-red-200 hover:bg-red-300"
                                           title="Delete Report"
                                     >
@@ -291,7 +298,6 @@ export default function ReportsPanel() {
                         const report = row.original
                         const commentStatus = report.comment?.status
                         const isDeleted = report.comment?.isDeleted
-                        const [isHardDeleteConfirmation, setIsHardDeleteConfirmation] = useState(false)
 
                         return (
                               <div className="flex space-x-2">
@@ -340,26 +346,33 @@ export default function ReportsPanel() {
                                     </button>
                                     <button
                                           onClick={() => {
-                                                if (isHardDeleteConfirmation) {
-                                                      handleHardDeleteConfirmation(report.id, report.commentId!)
-                                                      setIsHardDeleteConfirmation(false)
+                                                if (isHardDeleteConfirmation[report.commentId!]) {
+                                                      handleHardDeleteConfirmation(
+                                                            report.id.toString(),
+                                                            report.commentId!
+                                                      )
                                                 } else {
-                                                      setIsHardDeleteConfirmation(true)
+                                                      setIsHardDeleteConfirmation((prev) => ({
+                                                            ...prev,
+                                                            [report.commentId!]: true
+                                                      }))
                                                 }
                                           }}
                                           className="p-1 rounded bg-red-200 hover:bg-red-300"
                                           title={
-                                                isHardDeleteConfirmation ? 'Confirm Hard Delete' : 'Hard Delete Comment'
+                                                isHardDeleteConfirmation[report.commentId!]
+                                                      ? 'Confirm Hard Delete'
+                                                      : 'Hard Delete Comment'
                                           }
                                     >
-                                          {isHardDeleteConfirmation ? (
+                                          {isHardDeleteConfirmation[report.commentId!] ? (
                                                 <Check className="w-4 h-4 text-red-700" />
                                           ) : (
                                                 <Skull className="w-4 h-4 text-red-700" />
                                           )}
                                     </button>
                                     <button
-                                          onClick={() => handleDeleteReport(report.id)}
+                                          onClick={() => handleDeleteReport(report.id.toString())}
                                           className="p-1 rounded bg-orange-100 hover:bg-orange-200"
                                           title="Delete Report"
                                     >
@@ -372,7 +385,7 @@ export default function ReportsPanel() {
       ]
 
       if (status === 'loading') return <div>Loading...</div>
-      if (!session || session.user.role !== 1) return <div>Access denied</div>
+      if (!session || session.user.role !== 'admin') return <div>Access denied</div>
 
       return (
             <div className="container mx-auto p-4">
@@ -383,21 +396,25 @@ export default function ReportsPanel() {
                               <TabsTrigger value="post">Post Reports</TabsTrigger>
                         </TabsList>
                         <TabsContent value="post">
-                              <AdminListLayout
+                              <TableComponent
                                     title=""
                                     addNewLink=""
                                     addNewText=""
                                     columns={postColumns}
-                                    data={reports.filter((report) => report.postId)}
+                                    data={reports
+                                          .filter((report) => report.postId)
+                                          .map((report) => ({ ...report, id: Number(report.id) }))}
                               />
                         </TabsContent>
                         <TabsContent value="comment">
-                              <AdminListLayout
+                              <TableComponent
                                     title=""
                                     addNewLink=""
                                     addNewText=""
                                     columns={commentColumns}
-                                    data={reports.filter((report) => report.commentId)}
+                                    data={reports
+                                          .filter((report) => report.commentId)
+                                          .map((report) => ({ ...report, id: Number(report.id) }))}
                               />
                         </TabsContent>
                   </Tabs>

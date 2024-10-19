@@ -33,8 +33,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { ImageSelect } from './ui/imageSelect/image-select'
 
-// Ensure CodeBlockComponent is imported
-import CodeBlockComponent from './CodeBlockComponent'
+import { Extension } from '@tiptap/core'
 
 const lowlight = createLowlight(common)
 
@@ -53,10 +52,9 @@ interface EditorProps {
       content: string
       onChange: (content: string) => void
       simpleMode?: boolean
-      onImageButtonClick?: () => void
 }
 
-const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: EditorProps) => {
+const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
       const [showImageSelect, setShowImageSelect] = useState(false)
 
       const editor = useEditor({
@@ -77,8 +75,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                         defaultLanguage: 'javascript',
                         HTMLAttributes: {
                               class: 'code-block'
-                        },
-                        renderHTMLElement: CodeBlockComponent
+                        }
                   }),
                   Table.configure({
                         resizable: true,
@@ -99,7 +96,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                   new Plugin({
                         key: new PluginKey('handlePaste'),
                         props: {
-                              handlePaste: (view, event, slice) => {
+                              handlePaste: (view, event) => {
                                     const text = event.clipboardData?.getData('text/plain')
                                     if (text) {
                                           if (
@@ -120,7 +117,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                                     return false
                               }
                         }
-                  })
+                  }) as unknown as Extension
             ],
             content,
             onUpdate: ({ editor }) => {
@@ -128,7 +125,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                   onChange(markdown)
             },
             editorProps: {
-                  handlePaste: (view, event, slice) => {
+                  handlePaste: (view, event) => {
                         const clipboardData = event.clipboardData?.getData('text/plain')
                         if (clipboardData) {
                               event.preventDefault()
@@ -193,8 +190,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                         <div className="flex flex-wrap items-center space-x-1 mb-2 [&>Button]:py-1 [&>Button]:px-2 ">
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().toggleBold().run())}
                                     className={`hover:bg-gray-200 rounded-full transition ${editor.isActive('bold') ? 'bg-gray-200' : ''}`}
                               >
@@ -202,8 +198,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().toggleItalic().run())}
                                     className={`hover:bg-gray-200 rounded-full transition ${editor.isActive('italic') ? 'bg-gray-200' : ''}`}
                               >
@@ -211,8 +206,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().setParagraph().run())}
                                     className={`hover:bg-gray-200 rounded-full transition ${editor.isActive('paragraph') ? 'bg-gray-200' : ''}`}
                               >
@@ -220,8 +214,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() =>
                                           editor.chain().focus().toggleHeading({ level: 1 }).run()
                                     )}
@@ -231,8 +224,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() =>
                                           editor.chain().focus().toggleHeading({ level: 2 }).run()
                                     )}
@@ -242,8 +234,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() =>
                                           editor.chain().focus().toggleHeading({ level: 3 }).run()
                                     )}
@@ -253,8 +244,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().toggleBulletList().run())}
                                     className={`hover:bg-gray-200 rounded-full transition ${editor.isActive('bulletList') ? 'bg-gray-200' : ''}`}
                               >
@@ -262,8 +252,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().toggleOrderedList().run())}
                                     className={`hover:bg-gray-200 rounded-full transition ${editor.isActive('orderedList') ? 'bg-gray-200' : ''}`}
                               >
@@ -271,8 +260,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().toggleCodeBlock().run())}
                                     className={`hover:bg-gray-200 rounded-full transition ${editor.isActive('codeBlock') ? 'bg-gray-200' : ''}`}
                               >
@@ -292,8 +280,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Select>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().toggleCode().run())}
                                     className={`hover:bg-gray-200 rounded-full transition ${editor.isActive('code') ? 'bg-gray-200' : ''}`}
                               >
@@ -302,8 +289,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
 
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() =>
                                           editor
                                                 .chain()
@@ -317,8 +303,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().undo().run())}
                                     disabled={!editor.can().undo()}
                                     className="hover:bg-gray-200 rounded-full transition"
@@ -327,8 +312,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().redo().run())}
                                     disabled={!editor.can().redo()}
                                     className="hover:bg-gray-200 rounded-full transition"
@@ -337,8 +321,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={addLink}
                                     className={`hover:bg-gray-200 rounded-full transition ${editor.isActive('link') ? 'bg-gray-200' : ''}`}
                               >
@@ -346,8 +329,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={mergeCodeBlocks}
                                     className="hover:bg-gray-200 rounded-full transition"
                               >
@@ -355,8 +337,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={() => setShowImageSelect(true)}
                                     className="hover:bg-gray-200 rounded-full transition"
                               >
@@ -368,8 +349,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                         <div className="flex flex-wrap items-center space-x-1 mb-2 [&>Button]:py-1 [&>Button]:px-2 ">
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().toggleBold().run())}
                                     className={`hover:bg-gray-200 rounded-full transition ${editor.isActive('bold') ? 'bg-gray-200' : ''}`}
                               >
@@ -377,8 +357,7 @@ const Editor = ({ content, onChange, simpleMode = false, onImageButtonClick }: E
                               </Button>
                               <Button
                                     type="button"
-                                    variant="none"
-                                    size="sm"
+                                    variant="ghost"
                                     onClick={handleButtonClick(() => editor.chain().focus().toggleItalic().run())}
                                     className={`hover:bg-gray-200 rounded-full transition ${editor.isActive('italic') ? 'bg-gray-200' : ''}`}
                               >

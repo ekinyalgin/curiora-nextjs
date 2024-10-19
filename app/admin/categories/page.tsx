@@ -1,152 +1,142 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { AdminListLayout } from '@/components/ui/admin-list-layout';
-import { ColumnDef } from '@tanstack/react-table';
-import { useRouter } from 'next/navigation';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react'
+//import { AdminListLayout } from '@/components/ui/admin-list-layout'
+import { ColumnDef } from '@tanstack/react-table'
+import { useRouter } from 'next/navigation'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ArrowRight } from 'lucide-react'
+import { TableComponent } from '@/components/TableComponent'
 
 interface Category {
-      id: number;
-      name: string;
-      slug: string;
-      description: string | null;
-      language: { id: number; name: string } | null;
-      parent: { id: number; name: string } | null;
-      children: Category[];
+      id: number
+      name: string
+      slug: string
+      description: string | null
+      language: { id: number; name: string } | null
+      parent: { id: number; name: string } | null
+      children: Category[]
 }
 
 export default function CategoriesPage() {
-      const [categories, setCategories] = useState<Category[]>([]);
-      const [searchTerm, setSearchTerm] = useState('');
-      const [searchType, setSearchType] = useState('name');
-      const [languages, setLanguages] = useState<{ id: number; name: string }[]>([]);
-      const router = useRouter();
+      const [categories, setCategories] = useState<Category[]>([])
+      const [searchTerm, setSearchTerm] = useState('')
+      const [searchType, setSearchType] = useState('name')
+      const [languages, setLanguages] = useState<{ id: number; name: string }[]>([])
+      const router = useRouter()
 
-      useEffect(() => {
-            fetchCategories();
-            fetchLanguages();
-      }, []);
+      const fetchLanguages = useCallback(async () => {
+            const response = await fetch('/api/languages')
+            const data = await response.json()
+            setLanguages(data)
+      }, [])
 
-      async function fetchCategories(searchTerm: string = '', searchType: string = 'name') {
+      const fetchCategories = useCallback(async (searchTerm: string = '', searchType: string = 'name') => {
             const response = await fetch(
                   `/api/categories?search=${encodeURIComponent(searchTerm)}&searchType=${searchType}`
-            );
-            const data = await response.json();
-            const organizedCategories = organizeCategories(data);
-            setCategories(organizedCategories);
-      }
+            )
+            const data = await response.json()
+            const organizedCategories = organizeCategories(data)
+            setCategories(organizedCategories)
+      }, []) // Boş dependency array, çünkü bu fonksiyon hiçbir dış değişkene bağlı değil
 
-      async function fetchLanguages() {
-            const response = await fetch('/api/languages');
-            const data = await response.json();
-            setLanguages(data);
-      }
-
-      function organizeCategories(categories: Category[]): Category[] {
-            const topLevelCategories = categories.filter((c) => !c.parent);
-            const childCategories = categories.filter((c) => c.parent);
-
-            topLevelCategories.forEach((parent) => {
-                  parent.children = childCategories.filter((child) => child.parent?.id === parent.id);
-            });
-
-            return topLevelCategories;
-      }
+      useEffect(() => {
+            fetchCategories()
+            fetchLanguages()
+      }, [fetchLanguages, fetchCategories])
 
       async function deleteCategory(id: number) {
-            await fetch(`/api/categories/${id}`, { method: 'DELETE' });
-            fetchCategories(searchTerm, searchType);
+            await fetch(`/api/categories/${id}`, { method: 'DELETE' })
+            fetchCategories(searchTerm, searchType)
       }
 
       async function bulkDeleteCategories(ids: number[]) {
-            await Promise.all(ids.map((id) => fetch(`/api/categories/${id}`, { method: 'DELETE' })));
-            fetchCategories(searchTerm, searchType);
+            await Promise.all(ids.map((id) => fetch(`/api/categories/${id}`, { method: 'DELETE' })))
+            fetchCategories(searchTerm, searchType)
       }
 
       const handleEdit = (id: number) => {
-            router.push(`/admin/categories/edit/${id}`);
-      };
+            router.push(`/admin/categories/edit/${id}`)
+      }
 
       const handleSearch = async (term: string) => {
-            setSearchTerm(term);
-            await fetchCategories(term, searchType);
-      };
+            setSearchTerm(term)
+            await fetchCategories(term, searchType)
+      }
 
       const handleResetSearch = async () => {
-            setSearchTerm('');
-            setSearchType('name');
-            await fetchCategories();
-      };
+            setSearchTerm('')
+            setSearchType('name')
+            await fetchCategories()
+      }
 
       const handleSearchTypeChange = (value: string) => {
-            setSearchType(value);
+            setSearchType(value)
             if (searchTerm) {
-                  fetchCategories(searchTerm, value);
+                  fetchCategories(searchTerm, value)
             }
-      };
+      }
 
       const columns: ColumnDef<Category>[] = [
             {
                   accessorKey: 'name',
                   header: 'Name',
-                  headerClassName: 'w-3/12',
-                  cellClassName: 'font-semibold',
+                  meta: { className: 'w-3/12' },
                   cell: ({ row }) => {
-                        const indent = row.original.parent ? '' : '';
+                        const indent = row.original.parent ? '' : ''
                         return (
                               <div className={`flex items-center ${indent}`}>
                                     {row.original.parent && <ArrowRight strokeWidth="1.5" className="w-4 h-4 mr-4" />}
                                     <span>{row.original.name}</span>
                               </div>
-                        );
-                  },
+                        )
+                  }
             },
             {
                   accessorKey: 'slug',
                   header: 'Slug',
-                  headerClassName: 'w-2/12',
-                  cellClassName: 'text-gray-400',
+                  meta: { className: 'w-2/12' }
             },
             {
                   accessorKey: 'description',
                   header: 'Description',
-                  headerClassName: 'w-4/12',
-                  cellClassName: 'text-gray-400 text-sm',
+                  meta: { className: 'w-4/12' },
                   cell: ({ row }) => {
-                        const description = row.original.description;
-                        return description ? description.substring(0, 50) + (description.length > 50 ? '...' : '') : '';
-                  },
+                        const description = row.original.description
+                        return description ? description.substring(0, 50) + (description.length > 50 ? '...' : '') : ''
+                  }
             },
             {
                   accessorKey: 'language',
                   header: 'Language',
-                  headerClassName: 'w-1/12',
-                  cellClassName: '',
-                  cell: ({ row }) => row.original.language?.name || 'N/A',
+                  meta: { className: 'w-1/12' },
+                  cell: ({ row }) => row.original.language?.name || 'N/A'
             },
             {
                   accessorKey: 'parent',
                   header: 'Parent',
-                  headerClassName: 'w-2/12',
-                  cellClassName: '',
-                  cell: ({ row }) => row.original.parent?.name || '-',
-            },
-      ];
+                  meta: { className: 'w-2/12' },
+                  cell: ({ row }) => row.original.parent?.name || '-'
+            }
+      ]
 
       const flattenCategories = (categories: Category[]): Category[] => {
             return categories.reduce((acc, category) => {
-                  acc.push(category);
+                  acc.push(category)
                   if (category.children && category.children.length > 0) {
-                        acc.push(...flattenCategories(category.children));
+                        acc.push(...flattenCategories(category.children))
                   }
-                  return acc;
-            }, [] as Category[]);
-      };
+                  return acc
+            }, [] as Category[])
+      }
+
+      const organizeCategories = (categories: Category[]): Category[] => {
+            // Kategorileri organize etme mantığını buraya ekleyin
+            return categories
+      }
 
       return (
-            <AdminListLayout
+            <TableComponent
                   title="Categories"
                   addNewLink="/admin/categories/new"
                   addNewText="Add New Category"
@@ -178,5 +168,5 @@ export default function CategoriesPage() {
                   }
                   showCheckbox={true}
             />
-      );
+      )
 }

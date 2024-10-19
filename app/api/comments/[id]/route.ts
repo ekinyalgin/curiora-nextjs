@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
       const id = parseInt(params.id)
@@ -128,7 +128,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
             }
 
             // Kullanıcının yetkisini kontrol et
-            const isAdmin = session.user.role === 'admin' || session.user.role === 1
+            const isAdmin = session.user.role === 'admin'
             const isCommentOwner = session.user.id === comment.userId
 
             // Sadece admin veya yorum sahibi işlem yapabilir
@@ -137,7 +137,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
             }
 
             // Admin tüm işlemleri yapabilir, yorum sahibi sadece soft delete yapabilir
-            const updateData: any = {}
+            const updateData: {
+                  status?: 'pending' | 'approved' | 'archived'
+                  archivedAt?: Date | null
+                  isDeleted?: boolean
+            } = {}
 
             if (isAdmin) {
                   if (status) {
@@ -167,7 +171,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
       const session = await getServerSession(authOptions)
 
-      if (!session || session.user.role !== 1) {
+      if (!session || session.user.role !== 'admin') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 

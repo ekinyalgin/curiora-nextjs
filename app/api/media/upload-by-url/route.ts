@@ -5,11 +5,11 @@ import fs from 'fs/promises'
 import axios from 'axios'
 import { format } from 'date-fns'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '../../auth/[...nextauth]/route'
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 
 export async function POST(req: Request) {
       const session = await getServerSession(authOptions)
-      if (!session || session.user.role !== 1) {
+      if (!session || session.user.role !== 'admin') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 

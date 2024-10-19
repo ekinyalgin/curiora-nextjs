@@ -56,6 +56,8 @@ model User {
   commentVotes CommentVote[]
   postVotes    PostVote[]
   reports Report[] @relation("ReporterReports")
+  settings          UserSettings?
+  followedTags TagFollow[]
 }
 
 model VerificationToken {
@@ -78,21 +80,26 @@ model Language {
   code      String   @unique
   name      String
   isDefault Boolean  @default(false)
-    tags  Tag[]
-    categories  Category[]
-    posts           Post[]
+  tags      Tag[]
+  categories Category[]
+  posts     Post[]
+  userSettings UserSettings[]
 }
 
 model Tag {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  slug        String   @unique
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  language_id Int?
-  language    Language? @relation(fields: [language_id], references: [id])
-  posts       Post[]
+  id               Int         @id @default(autoincrement())
+  name             String      @unique
+  slug             String      @unique
+  description      String?     @db.Text
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  language_id      Int?
+  language         Language?   @relation(fields: [language_id], references: [id])
+  posts            Post[]
+  featuredImageId  Int?
+  featuredImage    Media?      @relation(fields: [featuredImageId], references: [id])
+  followers        TagFollow[]
+  followerCount    Int         @default(0)
 
   @@unique([name, language_id])
 }
@@ -182,6 +189,7 @@ model Media {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   posts Post[] // Bu satırı ekleyin
+  tagsFeaturedIn   Tag[]
 }
 
 enum VoteType {
@@ -254,4 +262,30 @@ model Report {
   @@index([postId])
   @@index([commentId])
   @@index([reporterId])
+}
+
+// Add this model to your schema
+model UserSettings {
+  id                Int      @id @default(autoincrement())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+  languageId        Int
+  language          Language @relation(fields: [languageId], references: [id])
+  themePreference   String   @default("light")
+  bio               String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// Yeni TagFollow modeli
+model TagFollow {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tagId     Int
+  userId    String
+  tag       Tag      @relation(fields: [tagId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([tagId, userId])
 }

@@ -1,107 +1,102 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { ColumnDef } from '@tanstack/react-table';
-import { AdminListLayout } from '@/components/ui/admin-list-layout';
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { ColumnDef } from '@tanstack/react-table'
+import { AdminListLayout } from '@/components/ui/admin-list-layout'
 
 interface Language {
-      id: number;
-      code: string;
-      name: string;
-      isDefault: boolean;
+      id: number
+      code: string
+      name: string
+      isDefault: boolean
 }
 
 export default function LanguageManagement() {
-      const [languages, setLanguages] = useState<Language[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
-      const { data: session, status } = useSession();
-      const router = useRouter();
+      const [languages, setLanguages] = useState<Language[]>([])
+      const [loading, setLoading] = useState(true)
+      const [error, setError] = useState<string | null>(null)
+      const { data: session, status } = useSession()
+      const router = useRouter()
 
       useEffect(() => {
             if (status === 'authenticated') {
-                  if (session?.user?.role !== 1) {
-                        router.push('/');
+                  if (session?.user?.role !== 'admin') {
+                        router.push('/')
                   } else {
-                        fetchLanguages();
+                        fetchLanguages()
                   }
             } else if (status === 'unauthenticated') {
-                  router.push('/login');
+                  router.push('/login')
             }
-      }, [session, status, router]);
+      }, [session, status, router])
 
       const fetchLanguages = async () => {
             try {
-                  setLoading(true);
-                  const response = await fetch('/api/languages');
-                  if (!response.ok) throw new Error('Failed to fetch languages');
-                  const data = await response.json();
-                  setLanguages(data);
+                  setLoading(true)
+                  const response = await fetch('/api/languages')
+                  if (!response.ok) throw new Error('Failed to fetch languages')
+                  const data = await response.json()
+                  setLanguages(data)
             } catch (err) {
-                  setError('Failed to load languages. Please try again later.');
-                  console.error('Error fetching languages:', err);
+                  setError('Failed to load languages. Please try again later.')
+                  console.error('Error fetching languages:', err)
             } finally {
-                  setLoading(false);
+                  setLoading(false)
             }
-      };
+      }
 
       const handleEdit = (id: number) => {
-            router.push(`/admin/languages/edit/${id}`);
-      };
+            router.push(`/admin/languages/edit/${id}`)
+      }
 
       const handleDelete = async (id: number) => {
             try {
                   const response = await fetch(`/api/languages/${id}`, {
-                        method: 'DELETE',
-                  });
-                  if (!response.ok) throw new Error('Failed to delete language');
-                  await fetchLanguages();
+                        method: 'DELETE'
+                  })
+                  if (!response.ok) throw new Error('Failed to delete language')
+                  await fetchLanguages()
             } catch (err) {
-                  console.error('Error deleting language:', err);
-                  alert('Failed to delete language. Please try again.');
+                  console.error('Error deleting language:', err)
+                  alert('Failed to delete language. Please try again.')
             }
-      };
+      }
 
       const columns: ColumnDef<Language>[] = [
             {
                   accessorKey: 'id',
-                  header: 'ID',
-                  headerClassName: 'w-1/12 text-center',
-                  cellClassName: 'font-medium text-center',
+                  header: () => <div className="w-1/12 text-center">ID</div>,
+                  cell: ({ row }) => <div className="font-medium text-center">{row.getValue('id')}</div>
             },
             {
                   accessorKey: 'code',
-                  header: 'Code',
-                  headerClassName: 'w-2/12',
-                  cellClassName: 'px-4 font-semibold',
+                  header: () => <div className="w-2/12">Code</div>,
+                  cell: ({ row }) => <div className="px-4 font-semibold">{row.getValue('code')}</div>
             },
             {
                   accessorKey: 'name',
-                  header: 'Name',
-                  headerClassName: 'w-4/12',
-                  cellClassName: 'px-4',
+                  header: () => <div className="w-4/12">Name</div>,
+                  cell: ({ row }) => <div className="px-4">{row.getValue('name')}</div>
             },
             {
                   accessorKey: 'isDefault',
-                  header: 'Default',
-                  headerClassName: 'w-2/12 text-center',
-                  cellClassName: 'text-center',
-                  cell: ({ row }) => (row.original.isDefault ? 'Yes' : 'No'),
-            },
-      ];
+                  header: () => <div className="w-2/12 text-center">Default</div>,
+                  cell: ({ row }) => <div className="text-center">{row.getValue('isDefault') ? 'Yes' : 'No'}</div>
+            }
+      ]
 
       if (status === 'loading' || loading) {
-            return <div>Loading...</div>;
+            return <div>Loading...</div>
       }
 
       if (error) {
-            return <div>Error: {error}</div>;
+            return <div>Error: {error}</div>
       }
 
-      if (status === 'authenticated' && session.user.role !== 1) {
-            return <div>Unauthorized</div>;
+      if (status === 'authenticated' && session.user.role !== 'admin') {
+            return <div>Unauthorized</div>
       }
 
       return (
@@ -114,5 +109,5 @@ export default function LanguageManagement() {
                   onEdit={handleEdit}
                   onDelete={handleDelete}
             />
-      );
+      )
 }

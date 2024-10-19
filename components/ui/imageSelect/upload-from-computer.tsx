@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { ImageUpload } from '../image-upload'
+import { ImageUpload } from './image-upload'
 
 export function UploadFromComputer({ onUpload }: { onUpload: (imageUrl: string) => void }) {
       const handleImageUpload = async (file: File) => {
@@ -26,5 +25,18 @@ export function UploadFromComputer({ onUpload }: { onUpload: (imageUrl: string) 
             }
       }
 
-      return <ImageUpload onImageUpload={handleImageUpload} onImageDelete={() => {}} />
+      const handleImageDelete = async (imageUrl: string) => {
+            // Implement image deletion logic here
+            console.log('Image deleted:', imageUrl)
+      }
+
+      return (
+            <ImageUpload
+                  onImageUpload={(imageUrl: string) => {
+                        const file = new File([imageUrl], 'image.jpg', { type: 'image/jpeg' })
+                        handleImageUpload(file)
+                  }}
+                  onImageDelete={handleImageDelete}
+            />
+      )
 }

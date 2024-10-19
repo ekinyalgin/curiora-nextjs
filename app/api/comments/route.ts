@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 
 export async function GET(request: Request) {
       const { searchParams } = new URL(request.url)
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Post ID is required' }, { status: 400 })
       }
 
-      const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 1
+      const isAdmin = session?.user?.role === 'admin'
 
       const comments = await prisma.comment.findMany({
             where: {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       }
 
       try {
-            const [comment, updatedPost] = await prisma.$transaction([
+            const [comment] = await prisma.$transaction([
                   prisma.comment.create({
                         data: {
                               postId: parseInt(postId),

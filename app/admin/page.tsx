@@ -11,7 +11,7 @@ export default function AdminDashboard() {
 
       useEffect(() => {
             if (status === 'loading') return
-            if (!session || session.user?.role !== 1) {
+            if (!session || session.user?.role !== '1') {
                   router.push('/')
             } else {
                   setIsLoading(false)

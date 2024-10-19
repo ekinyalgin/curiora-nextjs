@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import SignInModal from './auth/SignInModal'
+import SignInModal from '../auth/SignInModal'
 import {
       ClockArrowDown,
       Archive,
@@ -13,11 +13,11 @@ import {
       Undo2,
       Flag
 } from 'lucide-react'
-import { Tooltip } from './ui/Tooltip'
-import { Button } from './ui/button'
-import VoteComponent from './VoteComponent'
-import { ReportModal } from './ReportModal'
+import { Tooltip } from '../ui/Tooltip'
+import { Button } from '../ui/button'
+import { ReportModal } from '../ReportModal'
 import { ReportCategory } from '@prisma/client'
+import VoteComponent from '../VoteComponent'
 
 interface CommentActionsProps {
       onReply: (text: string) => Promise<void>
@@ -28,7 +28,6 @@ interface CommentActionsProps {
       onHardDelete: () => Promise<void>
       onVote: (voteType: 'upvote' | 'downvote' | null) => Promise<void>
       onReport: (category: ReportCategory, description: string) => Promise<void>
-      commentText: string
       canEditDelete: boolean
       isAdmin: boolean
       setActiveTextarea: (id: string | null) => void
@@ -41,6 +40,7 @@ interface CommentActionsProps {
       initialUpVotes: number
       initialDownVotes: number
       userVote: 'upvote' | 'downvote' | null
+      onDelete: () => Promise<void>
 }
 
 export default function CommentActions({
@@ -52,7 +52,6 @@ export default function CommentActions({
       onHardDelete,
       onVote,
       onReport,
-      commentText,
       canEditDelete,
       isAdmin,
       setActiveTextarea,
@@ -128,14 +127,8 @@ export default function CommentActions({
             }
       }
 
-      const handleStatusChange = async (newStatus: string) => {
-            try {
-                  const archivedAt = newStatus === 'archived' ? new Date() : null
-                  await onStatusChange(newStatus, archivedAt)
-            } catch (error) {
-                  console.error('Error changing comment status:', error)
-                  alert('Failed to change comment status. Please try again.')
-            }
+      const handleStatusChange = async (newStatus: string, archivedAt?: Date) => {
+            await onStatusChange(newStatus, archivedAt)
       }
 
       const handleEdit = () => {
@@ -174,7 +167,7 @@ export default function CommentActions({
                               {!isDeleted && (
                                     <>
                                           <VoteComponent
-                                                itemId={commentId}
+                                                itemId={commentId.toString()}
                                                 itemType="comment"
                                                 initialUpVotes={initialUpVotes}
                                                 initialDownVotes={initialDownVotes}
@@ -192,7 +185,7 @@ export default function CommentActions({
                                           )}
 
                                           <Tooltip content="Report Comment">
-                                                <Button variant="none" onClick={() => setIsReportModalOpen(true)}>
+                                                <Button variant="ghost" onClick={() => setIsReportModalOpen(true)}>
                                                       <Flag className="w-4" />
                                                 </Button>
                                           </Tooltip>
@@ -319,7 +312,7 @@ export default function CommentActions({
                                     <Tooltip content="Permanently Delete!">
                                           <Button
                                                 onClick={handleHardDelete}
-                                                variant="none"
+                                                variant="ghost"
                                                 className="text-red-700 text-sm"
                                           >
                                                 {isHardDeleteConfirm ? (

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import prisma from '@/lib/prisma'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
+import { ReportCategory } from '@prisma/client'
 
 export async function GET(req: Request) {
       const session = await getServerSession(authOptions)
-      if (!session || session.user.role !== 1) {
+      if (!session || session.user.role !== 'admin') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
@@ -13,7 +14,11 @@ export async function GET(req: Request) {
       const filter = searchParams.get('filter')
       const category = searchParams.get('category')
 
-      let whereClause: any = {}
+      const whereClause: {
+            postId?: { not: null }
+            commentId?: { not: null }
+            category?: ReportCategory
+      } = {}
 
       if (filter === 'post') {
             whereClause.postId = { not: null }
@@ -22,7 +27,7 @@ export async function GET(req: Request) {
       }
 
       if (category && category !== 'all') {
-            whereClause.category = category
+            whereClause.category = category as ReportCategory
       }
 
       try {
@@ -59,7 +64,7 @@ export async function GET(req: Request) {
 
             const formattedReports = reports.map((report) => ({
                   ...report,
-                  reportCount: report.postId ? report.post?.reportCount : report.comment?.reportCount
+                  reportCount: report.post?.reportCount || report.comment?.reportCount || 0
             }))
 
             return NextResponse.json(formattedReports)

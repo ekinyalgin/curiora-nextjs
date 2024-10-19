@@ -1,18 +1,39 @@
 import Image from 'next/image'
 import Avatar from 'react-avatar'
-import { RelativeDate } from './RelativeDate'
+import { RelativeDate } from '../RelativeDate'
 import CommentActions from './CommentActions'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import { ReportCategory } from '@prisma/client'
-import Notification from './Notification'
+import Notification from '../Notification'
 import { ClipboardCopy } from 'lucide-react'
-import { Tooltip } from './ui/Tooltip'
+import { Tooltip } from '../ui/Tooltip'
 import ReactMarkdown from 'react-markdown'
-import Editor from './Editor'
+import Editor from '../Editor'
+
+interface Comment {
+      id: number
+      commentText: string
+      status: string
+      isDeleted: boolean
+      createdAt: string
+      user: {
+            id: string
+            name: string
+            image?: string
+      }
+      voteCount?: {
+            upVotes: number
+            downVotes: number
+      }
+      votes?: { voteType: 'upvote' | 'downvote' }[]
+      childComments?: Comment[]
+      userVote?: 'upvote' | 'downvote' | null
+      parentCommentId: number | null
+}
 
 interface CommentItemProps {
-      comment: any
+      comment: Comment
       postId: number
       onReply: (parentId: number, text: string) => Promise<void>
       onEdit: (commentId: number, text: string) => Promise<void>
@@ -25,7 +46,7 @@ interface CommentItemProps {
       topLevelParentId?: number
       activeTextarea: string | null
       setActiveTextarea: (id: string | null) => void
-      updateComment: (commentId: number, updatedComment: any) => void
+      updateComment: (commentId: number, updatedComment: Comment) => void
       isAdmin: boolean
       isArchived: boolean
 }
@@ -54,11 +75,11 @@ export default function CommentItem({
             upVotes: comment.voteCount?.upVotes || 0,
             downVotes: comment.voteCount?.downVotes || 0
       })
-      const [userVote, setUserVote] = useState(comment.userVote)
+      const [userVote, setUserVote] = useState(comment.userVote || null)
       const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
       const handleReply = async (text: string) => {
-            const parentId = isChild ? topLevelParentId : comment.id
+            const parentId = isChild ? topLevelParentId! : comment.id
             await onReply(parentId, text)
             setActiveTextarea(null)
       }
@@ -125,7 +146,7 @@ export default function CommentItem({
             await onHardDelete(comment.id)
       }
 
-      const canEditDelete = isAdmin || (session && session.user.id === comment.userId)
+      const canEditDelete: boolean = isAdmin || (session && session.user?.id === comment.user.id) || false
 
       const getCommentStyle = () => {
             switch (comment.status) {
@@ -276,7 +297,6 @@ export default function CommentItem({
                                           onHardDelete={handleHardDelete}
                                           onVote={handleVote}
                                           onReport={handleReport}
-                                          commentText={comment.commentText}
                                           canEditDelete={canEditDelete}
                                           isAdmin={isAdmin}
                                           setActiveTextarea={setActiveTextarea}
@@ -304,8 +324,11 @@ export default function CommentItem({
                   {comment.childComments && comment.childComments.length > 0 && (
                         <div className="mt-4">
                               {comment.childComments
-                                    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-                                    .map((childComment) => (
+                                    .sort(
+                                          (a: Comment, b: Comment) =>
+                                                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                                    )
+                                    .map((childComment: Comment) => (
                                           <CommentItem
                                                 key={childComment.id}
                                                 comment={childComment}

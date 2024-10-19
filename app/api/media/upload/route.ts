@@ -5,7 +5,7 @@ import path from 'path'
 import fs from 'fs/promises'
 import { format } from 'date-fns'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 
 export async function POST(req: Request) {
       const session = await getServerSession(authOptions)

@@ -1,15 +1,14 @@
-import React, { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import React, { ReactNode } from 'react'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 
 interface AdminFormLayoutProps {
-      title: string;
-      backLink: string;
-      children: ReactNode;
-      onSubmit: (e: React.FormEvent) => void;
-      submitText: string;
+      title: string
+      backLink: string
+      children: ReactNode
+      onSubmit: (e: React.FormEvent) => void
+      submitText: string
 }
 
 export function AdminFormLayout({ title, backLink, children, onSubmit, submitText }: AdminFormLayoutProps) {
@@ -28,5 +27,5 @@ export function AdminFormLayout({ title, backLink, children, onSubmit, submitTex
                         <Button type="submit">{submitText}</Button>
                   </form>
             </div>
-      );
+      )
 }

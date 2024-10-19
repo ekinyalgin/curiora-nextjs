@@ -17,13 +17,14 @@ export function ImageSelect({
       isOpen: boolean
       value?: string | number | null
 }) {
-      const handleSelect = (image: any) => {
-            onSelect({ filePath: image.filePath, id: image.id })
+      const handleSelect = (image: { filePath: string; id: number }) => {
+            onSelect(image)
             onClose()
       }
 
       const handleUpload = (imageUrl: string) => {
-            onSelect(imageUrl)
+            // Assuming the upload API returns an object with filePath and id
+            onSelect({ filePath: imageUrl, id: -1 }) // Use a placeholder id or fetch the actual id from the server
             onClose()
       }
 

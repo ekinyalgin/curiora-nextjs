@@ -18,7 +18,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
                         category: true,
                         language: true,
                         tags: true,
-                        featuredImage: true
+                        image: true
                   }
             })
 
@@ -26,15 +26,12 @@ export async function GET(request: Request, { params }: { params: { id: string }
                   return NextResponse.json({ error: 'Post not found' }, { status: 404 })
             }
 
-            // Kullanıcı rolünü doğrudan içeren bir nesne oluşturalım
             const postWithUserRole = {
                   ...post,
                   user: {
                         ...post.user,
                         roleName: post.user.role?.name || 'User'
-                  },
-                  featuredImage: post.featuredImage?.filePath, // Bu satırı güncelleyin
-                  featuredImageId: post.featuredImage?.id // Bu satırı ekleyin
+                  }
             }
 
             return NextResponse.json(postWithUserRole)
@@ -44,38 +41,49 @@ export async function GET(request: Request, { params }: { params: { id: string }
       }
 }
 
+// PUT - Update a post
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-      const id = parseInt(params.id) // ID integer'a çevriliyor
+      const id = parseInt(params.id, 10) // Convert to Int
+
+      if (isNaN(id)) {
+            return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 })
+      }
 
       try {
             const body = await request.json()
-            const { user, category, language, tags, featuredImage, ...postData } = body
+            const { userId, categoryId, languageId, tags, imageId, ...postData } = body
 
-            if (!user || !category || !language) {
+            if (!userId || !categoryId || !languageId) {
                   return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+            }
+
+            // Explicitly define the fields we want to update
+            const updateData = {
+                  title: postData.title,
+                  slug: postData.slug,
+                  content: postData.content,
+                  status: postData.status,
+                  type: postData.type,
+                  seoTitle: postData.seoTitle,
+                  seoDescription: postData.seoDescription,
+                  userId: userId, // This should be a string
+                  categoryId: parseInt(categoryId, 10),
+                  languageId: parseInt(languageId, 10),
+                  imageId: imageId ? parseInt(imageId, 10) : null
             }
 
             const updatedPost = await prisma.post.update({
                   where: { id },
                   data: {
-                        ...postData,
-                        userId: user.id,
-                        featuredImageId: featuredImage.id,
-                        categoryId: parseInt(category.id),
-                        languageId: parseInt(language.id),
+                        ...updateData,
                         tags: {
-                              set: [],
+                              set: [], // Clear existing tags
                               connectOrCreate: tags.map((tag: string) => ({
-                                    where: {
-                                          name_language_id: {
-                                                name: tag,
-                                                language_id: parseInt(language.id)
-                                          }
-                                    },
+                                    where: { name_languageId: { name: tag, languageId: parseInt(languageId, 10) } },
                                     create: {
                                           name: tag,
                                           slug: slugify(tag, { lower: true }),
-                                          language_id: parseInt(language.id)
+                                          languageId: parseInt(languageId, 10)
                                     }
                               }))
                         }
@@ -84,7 +92,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                         user: { include: { role: true } },
                         category: true,
                         language: true,
-                        tags: true
+                        tags: true,
+                        image: true
                   }
             })
 

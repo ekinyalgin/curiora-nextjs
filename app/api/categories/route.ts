@@ -1,56 +1,30 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import slugify from 'slugify'
-import { Category } from '@prisma/client'
-
-interface ExtendedCategory extends Category {
-      language: { id: number; name: string; code: string; isDefault: boolean } | null
-      parent: ExtendedCategory | null
-      children: ExtendedCategory[]
-}
 
 export async function GET(request: Request) {
       const { searchParams } = new URL(request.url)
       const search = searchParams.get('search')
-      const searchType = searchParams.get('searchType') || 'name'
 
-      let categories: ExtendedCategory[] = []
+      let categories
 
       if (search) {
-            const whereClause =
-                  searchType === 'name'
-                        ? {
-                                OR: [
-                                      { name: { contains: search } },
-                                      { slug: { contains: search } },
-                                      { description: { contains: search } }
-                                ]
-                          }
-                        : { language: { id: parseInt(search) } }
-
-            categories = (await prisma.category.findMany({
-                  where: whereClause,
-                  include: { language: true, parent: true, children: true }
-            })) as unknown as ExtendedCategory[]
-
-            // If a child category is found, add its parent as well
-            const parentIds = categories.map((c) => c.parentId).filter((id): id is number => id !== null)
-            const parents = await prisma.category.findMany({
-                  where: { id: { in: parentIds } },
-                  include: { language: true, parent: true, children: true }
+            const searchLower = search.toLowerCase()
+            categories = await prisma.category.findMany({
+                  where: {
+                        OR: [
+                              { name: { contains: searchLower } },
+                              { slug: { contains: searchLower } },
+                              { description: { contains: searchLower } }
+                        ]
+                  },
+                  include: { language: true, parent: true, children: true, image: true }
             })
-
-            categories = [...categories, ...parents] as ExtendedCategory[]
       } else {
-            categories = (await prisma.category.findMany({
-                  include: { language: true, parent: true, children: true }
-            })) as unknown as ExtendedCategory[]
+            categories = await prisma.category.findMany({
+                  include: { language: true, parent: true, children: true, image: true }
+            })
       }
-
-      // Remove duplicates
-      categories = Array.from(new Set(categories.map((c) => c.id))).map((id) => {
-            return categories.find((c: ExtendedCategory) => c.id === id)!
-      })
 
       return NextResponse.json(categories)
 }
@@ -58,7 +32,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
       try {
             const body = await request.json()
-            const { name, slug, description, languageId, parentId, seoDescription, seoTitle } = body
+            const { name, slug, description, languageId, parentId, seoDescription, seoTitle, imageId } = body
 
             const finalSlug = slug || slugify(name, { lower: true, strict: true })
 
@@ -70,9 +44,10 @@ export async function POST(request: Request) {
                         languageId: languageId ? parseInt(languageId) : null,
                         parentId: parentId ? parseInt(parentId) : null,
                         seoDescription,
-                        seoTitle
+                        seoTitle,
+                        imageId: imageId ? parseInt(imageId) : null
                   },
-                  include: { language: true, parent: true }
+                  include: { language: true, parent: true, image: true }
             })
 
             return NextResponse.json(category, { status: 201 })

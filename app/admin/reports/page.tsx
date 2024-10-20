@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-//import { AdminListLayout } from '@/components/ui/admin-list-layout'
+//import { TableComponent } from '@/components/TableComponent'
 import { useSession } from 'next-auth/react'
 import { ReportCategory } from '@prisma/client'
 import { ColumnDef } from '@tanstack/react-table'

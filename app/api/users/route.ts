@@ -1,36 +1,41 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: Request) {
-      const { searchParams } = new URL(request.url);
-      const search = searchParams.get('search');
+      const { searchParams } = new URL(request.url)
+      const search = searchParams.get('search')
 
-      let users;
+      let users
       if (search) {
             users = await prisma.user.findMany({
                   where: {
                         OR: [
                               { name: { contains: search } },
                               { email: { contains: search } },
-                              { username: { contains: search } },
-                        ],
+                              { username: { contains: search } }
+                        ]
                   },
-                  include: { role: true },
-            });
+                  include: { role: true }
+            })
       } else {
             users = await prisma.user.findMany({
-                  include: { role: true },
-            });
+                  include: { role: true }
+            })
       }
 
-      return NextResponse.json(users);
+      return NextResponse.json(users)
 }
 
 export async function POST(request: Request) {
-      const body = await request.json();
+      const body = await request.json()
       const user = await prisma.user.create({
-            data: body,
-            include: { role: true },
-      });
-      return NextResponse.json(user, { status: 201 });
+            data: {
+                  name: body.name,
+                  email: body.email,
+                  username: body.username,
+                  roleId: body.roleId
+            },
+            include: { role: true }
+      })
+      return NextResponse.json(user, { status: 201 })
 }

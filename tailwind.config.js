@@ -8,6 +8,19 @@ module.exports = {
     ],
     theme: {
     	extend: {
+			keyframes: {
+				fadeIn: {
+				  '0%': { opacity: '0' },
+				  '100%': { opacity: '1' },
+				},
+			  },
+			  animation: {
+				fadeIn: 'fadeIn 1s ease-in-out forwards',
+  fadeInSlow: 'fadeIn 2s ease-in-out forwards',
+  fadeInFast: 'fadeIn 0.5s ease-in-out forwards',
+  
+			  },
+			  
     		colors: {
     			background: 'hsl(var(--background))',
     			foreground: 'hsl(var(--foreground))',
@@ -52,16 +65,7 @@ module.exports = {
     		},
     		fontFamily: {
 				sans: [
-					'-apple-system',
-					'BlinkMacSystemFont',
-					'Segoe UI',
-					'Roboto',
-					'Helvetica Neue',
-					'Arial',
-					'Apple Color Emoji',
-					'Segoe UI Emoji',
-					'Segoe UI Symbol',
-					'sans-serif'
+					'ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol'
 				]
 			},
 			

@@ -25,8 +25,7 @@ export default function NewPost() {
             languageId: '',
             seoTitle: '',
             seoDescription: '',
-            featuredImageId: null as number | null,
-            featuredImage: null as string | null,
+            imageId: null as number | null,
             tags: [] as string[]
       })
       const [users, setUsers] = useState([])
@@ -73,7 +72,7 @@ export default function NewPost() {
                               user: { id: postToSubmit.userId },
                               category: { id: postToSubmit.categoryId },
                               language: { id: postToSubmit.languageId },
-                              featuredImage: { id: postToSubmit.featuredImageId }
+                              imageId: postToSubmit.imageId
                         })
                   })
 
@@ -95,8 +94,7 @@ export default function NewPost() {
       const handleFeaturedImageSelect = (image: { filePath: string; id: number }) => {
             setPost((prev) => ({
                   ...prev,
-                  featuredImageId: image.id,
-                  featuredImage: image.filePath
+                  imageId: image.id
             }))
             setShowImageSelect(false)
       }
@@ -104,8 +102,7 @@ export default function NewPost() {
       const handleRemoveFeaturedImage = () => {
             setPost((prev) => ({
                   ...prev,
-                  featuredImageId: null,
-                  featuredImage: null
+                  imageId: null
             }))
       }
 
@@ -195,14 +192,13 @@ export default function NewPost() {
                         onChange={(value) => setPost((prev) => ({ ...prev, languageId: value }))}
                   />
                   <FeaturedImageSelect
-                        featuredImage={post.featuredImage}
-                        featuredImageId={post.featuredImageId}
+                        imageId={post.imageId}
                         onSelectImage={() => setShowImageSelect(true)}
                         onRemoveImage={handleRemoveFeaturedImage}
                   />
 
                   <ImageSelect
-                        value={post.featuredImageId}
+                        value={post.imageId}
                         onSelect={handleFeaturedImageSelect}
                         isOpen={showImageSelect}
                         onClose={() => setShowImageSelect(false)}

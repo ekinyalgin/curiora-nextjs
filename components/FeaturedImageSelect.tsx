@@ -4,14 +4,14 @@ import { X } from 'lucide-react'
 
 interface FeaturedImageSelectProps {
       featuredImage: string | null
-      featuredImageId: number | null
+      imageId: number | null
       onSelectImage: () => void
       onRemoveImage: () => void
 }
 
 export function FeaturedImageSelect({
       featuredImage,
-      featuredImageId,
+      imageId,
       onSelectImage,
       onRemoveImage
 }: FeaturedImageSelectProps) {
@@ -37,7 +37,7 @@ export function FeaturedImageSelect({
                         </div>
                   )}
                   <Button type="button" onClick={onSelectImage} className="mt-2">
-                        {featuredImageId ? 'Change' : 'Select'} Featured Image
+                        {imageId ? 'Change' : 'Select'} Featured Image
                   </Button>
             </div>
       )

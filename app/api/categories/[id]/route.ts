@@ -6,7 +6,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       const id = parseInt(params.id)
       const category = await prisma.category.findUnique({
             where: { id },
-            include: { language: true, parent: true }
+            include: { language: true, parent: true, image: true }
       })
 
       if (!category) {
@@ -19,7 +19,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
       const id = parseInt(params.id)
       const body = await request.json()
-      const { name, slug, description, languageId, parentId, seoDescription, seoTitle } = body
+      const { name, slug, description, languageId, parentId, seoDescription, seoTitle, imageId } = body
 
       const finalSlug = slug || slugify(name, { lower: true, strict: true })
 
@@ -33,9 +33,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                         languageId: languageId ? parseInt(languageId) : null,
                         parentId: parentId ? parseInt(parentId) : null,
                         seoDescription,
-                        seoTitle
+                        seoTitle,
+                        imageId: imageId ? parseInt(imageId) : null
                   },
-                  include: { language: true, parent: true }
+                  include: { language: true, parent: true, image: true }
             })
             return NextResponse.json(updatedCategory)
       } catch (error) {

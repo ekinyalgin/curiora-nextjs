@@ -2,45 +2,42 @@
 import Link from 'next/link'
 import { signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
+import { LogOut } from 'lucide-react'
 
 export default function AdminHeader() {
       const { data: session } = useSession()
 
       return (
-            <header className="bg-gray-800 text-white shadow-md">
-                  <nav className="container mx-auto px-6 py-3">
-                        <div className="flex justify-between items-center">
-                              <div className="flex items-center">
-                                    <Link href="/admin" className="text-xl font-bold mr-6">
-                                          Admin Panel
-                                    </Link>
-                                    <Link href="/admin/users" className="text-gray-300 hover:text-white mr-4">
-                                          Users
-                                    </Link>
-                                    <Link href="/admin/settings" className="text-gray-300 hover:text-white">
-                                          Settings
-                                    </Link>
-                              </div>
-                              <div className="flex items-center">
-                                    {session?.user?.image && (
-                                          <Image
-                                                src={session.user.image}
-                                                alt="User"
-                                                width={32}
-                                                height={32}
-                                                className="rounded-full mr-2"
-                                          />
-                                    )}
-                                    <span className="mr-4">{session?.user?.name}</span>
-                                    <button
-                                          onClick={() => signOut({ callbackUrl: '/' })}
-                                          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                                    >
-                                          Sign Out
-                                    </button>
-                              </div>
+            <header className="bg-gray-900 shadow-md sticky top-0 z-10 w-full">
+                  <div className="px-6 py-4 flex justify-between items-center">
+                        {/* Logo and Title */}
+                        <div className="flex items-center space-x-4">
+                              <Link href="/admin" className="text-2xl font-bold text-white flex items-center space-x-2">
+                                    <span className="text-white">Admin Panel</span>
+                              </Link>
                         </div>
-                  </nav>
+
+                        {/* User Profile and Sign Out */}
+                        <div className="flex items-center space-x-4">
+                              {session?.user?.image && (
+                                    <Image
+                                          src={session.user.image}
+                                          alt="User"
+                                          width={40}
+                                          height={40}
+                                          className="rounded-full border border-gray-700"
+                                    />
+                              )}
+                              <div className="text-white font-medium">{session?.user?.name}</div>
+                              <button
+                                    onClick={() => signOut({ callbackUrl: '/' })}
+                                    className="flex items-center bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all"
+                              >
+                                    <LogOut className="w-5 h-5 mr-2" />
+                                    Sign Out
+                              </button>
+                        </div>
+                  </div>
             </header>
       )
 }

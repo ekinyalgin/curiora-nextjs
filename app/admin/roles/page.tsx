@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { ColumnDef } from '@tanstack/react-table'
 import { TableComponent } from '@/components/TableComponent'
 import { Button } from '@/components/ui/button'
 import {
@@ -38,17 +37,18 @@ export default function RoleManagement() {
       const [editingRoleId, setEditingRoleId] = useState<number | null>(null)
       const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-      useEffect(() => {
-            checkSession()
-      }, [status, session])
-
-      const checkSession = () => {
+      // checkSession fonksiyonunu useCallback ile tanımlıyoruz
+      const checkSession = useCallback(() => {
             if (status === 'authenticated' && (session?.user as SessionUser)?.role !== 'admin') {
                   router.push('/')
             } else if (status === 'unauthenticated') {
                   router.push('/')
             }
-      }
+      }, [status, session, router])
+
+      useEffect(() => {
+            checkSession()
+      }, [checkSession])
 
       useEffect(() => {
             if (status === 'authenticated' && (session?.user as SessionUser)?.role === 'admin') {
@@ -58,8 +58,6 @@ export default function RoleManagement() {
 
       const fetchRoles = async () => {
             try {
-                  await new Promise((resolve) => setTimeout(resolve, 1000)) // 2 saniye bekletme
-
                   setLoading(true)
                   const response = await fetch('/api/roles')
                   if (!response.ok) throw new Error('Failed to fetch roles')
@@ -80,6 +78,10 @@ export default function RoleManagement() {
       }
 
       const handleDelete = async (id: number) => {
+            // Optimistic update
+            const updatedRoles = roles.filter((role) => role.id !== id)
+            setRoles(updatedRoles)
+
             try {
                   const response = await fetch('/api/roles', {
                         method: 'DELETE',
@@ -87,11 +89,62 @@ export default function RoleManagement() {
                         body: JSON.stringify({ id })
                   })
                   if (!response.ok) throw new Error('Failed to delete role')
-                  await fetchRoles()
                   setNotification({ message: 'Role deleted successfully', type: 'success' })
             } catch (err) {
                   console.error('Error deleting role:', err)
                   setNotification({ message: 'Failed to delete role. Please try again.', type: 'error' })
+                  // Revert the optimistic update
+                  setRoles(roles)
+            }
+      }
+
+      const handleAddRole = async (newRole: Omit<Role, 'id'>) => {
+            const tempId = 0 // Geçici ID
+
+            // Optimistik güncelleme - Yeni rolü listeye ekliyoruz
+            const optimisticRole = { ...newRole, id: tempId }
+            setRoles((prevRoles) => [...prevRoles, optimisticRole])
+
+            try {
+                  const response = await fetch('/api/roles', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newRole)
+                  })
+                  if (!response.ok) throw new Error('Failed to add role')
+                  const addedRole = await response.json()
+
+                  // Gerçek ID ile güncelleme - Sunucu yanıtıyla rolü güncelliyoruz
+                  setRoles((prevRoles) => prevRoles.map((role) => (role.id === tempId ? addedRole : role)))
+
+                  setNotification({ message: 'Role added successfully', type: 'success' })
+            } catch (err) {
+                  console.error('Error adding role:', err)
+                  setNotification({ message: 'Failed to add role. Please try again.', type: 'error' })
+                  // Optimistik güncellemeyi geri al - Eğer ekleme başarısız olursa rolü listeden çıkarıyoruz
+                  setRoles((prevRoles) => prevRoles.filter((role) => role.id !== tempId))
+            }
+      }
+
+      const handleUpdateRole = async (updatedRole: Role) => {
+            // Optimistic update
+            setRoles((prevRoles) => prevRoles.map((role) => (role.id === updatedRole.id ? updatedRole : role)))
+
+            try {
+                  const response = await fetch(`/api/roles/${updatedRole.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedRole)
+                  })
+                  if (!response.ok) throw new Error('Failed to update role')
+                  setNotification({ message: 'Role updated successfully', type: 'success' })
+            } catch (err) {
+                  console.error('Error updating role:', err)
+                  setNotification({ message: 'Failed to update role. Please try again.', type: 'error' })
+                  // Revert the optimistic update
+                  await fetchRoles()
+            } finally {
+                  setIsEditModalOpen(false)
             }
       }
 
@@ -140,33 +193,37 @@ export default function RoleManagement() {
                                     <DialogHeader>
                                           <DialogTitle>Add New Role</DialogTitle>
                                           <DialogDescription>
-                                                Create a new role here. Click save when you're done.
+                                                Create a new role here. Click save when you are done.
                                           </DialogDescription>
                                     </DialogHeader>
                                     <RoleForm
-                                          onSubmit={() => {
-                                                fetchRoles()
-                                                setNotification({ message: 'Role added successfully', type: 'success' })
+                                          onSubmit={(newRole) => {
+                                                handleAddRole(newRole)
+                                                setTimeout(() => setIsEditModalOpen(false), 0) // Modal'ı kapatmak için setTimeout eklenmesi
                                           }}
                                     />
                               </DialogContent>
                         </Dialog>
                   </div>
-                  <TableComponent columns={columns} data={roles} onEdit={handleEdit} onDelete={handleDelete} />
+                  <TableComponent
+                        columns={columns}
+                        data={roles}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        enableSearch={false} // Disable search for roles
+                  />
                   <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
                         <DialogContent>
                               <DialogHeader>
                                     <DialogTitle>Edit Role</DialogTitle>
                                     <DialogDescription>
-                                          Edit the role details here. Click update when you're done.
+                                          Edit the role details here. Click update when you are done.
                                     </DialogDescription>
                               </DialogHeader>
                               <RoleForm
                                     roleId={editingRoleId}
-                                    onSubmit={() => {
-                                          fetchRoles()
-                                          setIsEditModalOpen(false)
-                                          setNotification({ message: 'Role updated successfully', type: 'success' })
+                                    onSubmit={(updatedRole) => {
+                                          handleUpdateRole(updatedRole as Role)
                                     }}
                               />
                         </DialogContent>

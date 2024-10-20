@@ -28,8 +28,8 @@ async function generateUniqueSlug(baseSlug: string, existingId?: number): Promis
 }
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-      console.log('Received params:', params) // Log the entire params object
-      console.log('Received ID:', params.id) // Log the id specifically
+      console.log('Received params:', params)
+      console.log('Received ID:', params.id)
 
       if (!params.id) {
             return NextResponse.json({ error: 'ID is required' }, { status: 400 })
@@ -47,7 +47,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
                   where: { id },
                   include: {
                         language: true,
-                        featuredImage: true // Bu satırı ekleyin veya kontrol edin
+                        image: true // featuredImage yerine image kullanıyoruz
                   }
             })
 
@@ -68,9 +68,12 @@ export async function GET(request: Request, { params }: { params: { id: string }
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
       const id = parseInt(params.id)
       const body = await request.json()
-      const { name, slug, description, language_id, featuredImageId } = body
+      const { name, slug, description, languageId, imageId, seoTitle, seoDescription } = body
 
-      const finalSlug = !slug ? await generateUniqueSlug(createSlug(name), id) : slug
+      let finalSlug = slug
+      if (!finalSlug) {
+            finalSlug = await generateUniqueSlug(createSlug(name), id)
+      }
 
       try {
             const updatedTag = await prisma.tag.update({
@@ -79,10 +82,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                         name,
                         slug: finalSlug,
                         description,
-                        language_id: language_id ? parseInt(language_id) : null,
-                        featuredImageId: featuredImageId ? parseInt(featuredImageId) : null
+                        languageId: languageId ? parseInt(languageId) : null,
+                        imageId: imageId ? parseInt(imageId) : null,
+                        seoTitle,
+                        seoDescription
                   },
-                  include: { language: true, featuredImage: true }
+                  include: { language: true, image: true }
             })
             return NextResponse.json(updatedTag)
       } catch (error) {

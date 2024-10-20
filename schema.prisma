@@ -93,15 +93,17 @@ model Tag {
   description      String?     @db.Text
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
-  language_id      Int?
-  language         Language?   @relation(fields: [language_id], references: [id])
+  languageId       Int?
+  language         Language?   @relation(fields: [languageId], references: [id])
   posts            Post[]
-  featuredImageId  Int?
-  featuredImage    Media?      @relation(fields: [featuredImageId], references: [id])
+  imageId          Int?
+  image            Media?      @relation(fields: [imageId], references: [id])
   followers        TagFollow[]
   followerCount    Int         @default(0)
+  seoTitle         String?     @db.VarChar(60)
+  seoDescription   String?     @db.VarChar(160)
 
-  @@unique([name, language_id])
+  @@unique([name, languageId])
 }
 
 model Category {
@@ -118,7 +120,9 @@ model Category {
   seoTitle       String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  posts           Post[]
+  posts          Post[]
+  imageId        Int?
+  image          Media?    @relation(fields: [imageId], references: [id])
 }
 
 model Post {
@@ -132,8 +136,8 @@ model Post {
   userId          String   
   categoryId      Int
   createdAt       DateTime  @default(now())
-  featuredImageId Int?
-  featuredImage   Media?    @relation(fields: [featuredImageId], references: [id])
+  imageId Int?
+  image   Media?    @relation(fields: [imageId], references: [id])
   languageId      Int
   lastActivityAt  DateTime  @updatedAt
   publishedAt     DateTime?
@@ -188,8 +192,9 @@ model Media {
   createdAt DateTime @default(now())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
-  posts Post[] // Bu satırı ekleyin
-  tagsFeaturedIn   Tag[]
+  posts     Post[]
+  tagsFeaturedIn Tag[]
+  categories Category[]
 }
 
 enum VoteType {
@@ -264,7 +269,6 @@ model Report {
   @@index([reporterId])
 }
 
-// Add this model to your schema
 model UserSettings {
   id                Int      @id @default(autoincrement())
   userId            String   @unique

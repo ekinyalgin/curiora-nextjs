@@ -9,7 +9,7 @@ export default function AdminDashboard() {
 
       useEffect(() => {
             if (status === 'loading') return
-            if (!session || session.user?.role !== 'user') {
+            if (!session || session.user?.role !== 'admin') {
                   router.push('/')
             }
       }, [session, status, router])
@@ -18,7 +18,7 @@ export default function AdminDashboard() {
             return <div>Loading...</div>
       }
 
-      if (!session || session.user?.role !== 'user') {
+      if (!session || session.user?.role !== 'admin') {
             return null
       }
 

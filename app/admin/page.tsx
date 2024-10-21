@@ -11,7 +11,7 @@ export default function AdminDashboard() {
 
       useEffect(() => {
             if (status === 'loading') return
-            if (!session || session.user?.role !== '1') {
+            if (!session || session.user?.role !== 'admin') {
                   router.push('/')
             } else {
                   setIsLoading(false)
@@ -24,7 +24,7 @@ export default function AdminDashboard() {
 
       return (
             <div>
-                  <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+                  <h1 className="text-3xl font-bold mb-6 mt-10">Admin Dashboard</h1>
                   <p>Welcome to the admin dashboard. Here you can manage your site.</p>
             </div>
       )

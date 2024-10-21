@@ -1,7 +1,8 @@
-import { ReactNode } from 'react';
-import { SessionProvider } from '@/components/SessionProvider';
-import Header from '@/components/Header';
-import '../styles/globals.css';
+import { ReactNode } from 'react'
+import { SessionProvider } from '@/components/SessionProvider'
+import Header from '@/components/Header'
+import SuspenseWrapper from '@/components/SuspenseWrapper'
+import '../styles/globals.css'
 
 export default function RootLayout({ children }: { children: ReactNode }) {
       return (
@@ -9,9 +10,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   <body>
                         <SessionProvider>
                               <Header />
-                              {children}
+                              <SuspenseWrapper>{children}</SuspenseWrapper>
                         </SessionProvider>
                   </body>
             </html>
-      );
+      )
 }

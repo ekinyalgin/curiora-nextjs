@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { PostItem } from '@/components/PostItem'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import Script from 'next/script'
 
 async function getCategory(slug: string) {
       return prisma.category.findUnique({
@@ -55,19 +56,46 @@ export default async function CategoryPage({ params }: { params: { slug: string 
             notFound()
       }
 
+      const jsonLd = {
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            mainEntityOfPage: {
+                  '@type': 'WebPage',
+                  '@id': `https://yourblog.com/categories/${category.slug}`
+            },
+            name: category.name,
+            description: category.seoDescription || `Explore posts in the ${category.name} category on Your Blog Name`,
+            url: `https://yourblog.com/categories/${category.slug}`,
+            isPartOf: {
+                  '@type': 'WebSite',
+                  name: 'Your Blog Name',
+                  url: 'https://yourblog.com'
+            },
+            inLanguage: 'en-US', // Adjust this based on your blog's language
+            datePublished: category.createdAt.toISOString(),
+            dateModified: category.updatedAt.toISOString()
+      }
+
       return (
-            <div className="container mx-auto px-4 py-8">
-                  <h1 className="text-3xl font-bold mb-8">Category: {category.name}</h1>
-                  {category.posts.map((post) => (
-                        <PostItem
-                              key={post.id.toString()}
-                              post={{
-                                    ...post,
-                                    id: post.id.toString(),
-                                    user: { name: post.user.name || 'Unknown User' }
-                              }}
-                        />
-                  ))}
-            </div>
+            <>
+                  <Script
+                        id="json-ld"
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                  />
+                  <div className="container mx-auto px-4 py-8">
+                        <h1 className="text-3xl font-bold mb-8">Category: {category.name}</h1>
+                        {category.posts.map((post) => (
+                              <PostItem
+                                    key={post.id.toString()}
+                                    post={{
+                                          ...post,
+                                          id: post.id.toString(),
+                                          user: { name: post.user.name || 'Unknown User' }
+                                    }}
+                              />
+                        ))}
+                  </div>
+            </>
       )
 }

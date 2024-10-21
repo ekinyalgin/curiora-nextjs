@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import Loading from '@/components/Loading'
 import { Suspense } from 'react'
 import { Metadata } from 'next'
+import Script from 'next/script'
 
 // Comment tipini güncelleyelim
 interface Comment {
@@ -161,9 +162,43 @@ async function PostContent({ slug }: { slug: string }) {
             coverImage: post.image?.filePath
       }
 
+      const jsonLd = {
+            '@context': 'https://schema.org',
+            '@type': 'BlogPosting',
+            headline: transformedPost.title,
+            image: transformedPost.coverImage,
+            datePublished: transformedPost.createdAt,
+            dateModified: transformedPost.updatedAt,
+            author: {
+                  '@type': 'Person',
+                  name: transformedPost.user.name
+            },
+            publisher: {
+                  '@type': 'Organization',
+                  name: 'Your Blog Name',
+                  logo: {
+                        '@type': 'ImageObject',
+                        url: 'https://yourblog.com/logo.png'
+                  }
+            },
+            description: transformedPost.excerpt,
+            keywords: transformedPost.tags.map((tag) => tag.name).join(', '),
+            mainEntityOfPage: {
+                  '@type': 'WebPage',
+                  '@id': `https://yourblog.com/posts/${transformedPost.slug}`
+            }
+      }
+
       return (
-            <div className="container mx-auto px-4 py-8">
-                  <PostComponent post={transformedPost} showEditLink={isAdmin} />
-            </div>
+            <>
+                  <Script
+                        id="json-ld"
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                  />
+                  <div className="container mx-auto px-4 py-8">
+                        <PostComponent post={transformedPost} showEditLink={isAdmin} />
+                  </div>
+            </>
       )
 }

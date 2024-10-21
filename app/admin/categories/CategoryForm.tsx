@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { SlugInput, createSlug } from '@/components/ui/slug-input'
+import { SlugInput } from '@/components/ui/slug-input'
 import { ImageSelect } from '@/components/ui/imageSelect/image-select'
 import { SeoFields } from '@/components/SeoFields'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -24,7 +24,7 @@ interface CategoryFormData {
 }
 
 interface CategoryFormProps {
-      categoryId?: number | null
+      categoryId: number | null
       onSubmit: (data: CategoryFormData) => void
 }
 
@@ -38,7 +38,7 @@ interface Category {
       name: string
 }
 
-export function CategoryForm({ categoryId, onSubmit }: CategoryFormProps) {
+export const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId, onSubmit }) => {
       const [isLoading, setIsLoading] = useState(false)
       const [isFetching, setIsFetching] = useState(false)
       const [languages, setLanguages] = useState<Language[]>([])

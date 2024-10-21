@@ -15,34 +15,38 @@ export async function GET(request: Request) {
                   include: {
                         user: {
                               include: {
-                                    role: true // This includes the role information
+                                    role: true
                               }
                         },
                         category: true,
                         language: true,
-                        tags: true
+                        tags: true,
+                        image: true // Include the image relation
                   }
             })
       } else {
             posts = await prisma.post.findMany({
                   include: {
                         user: {
-                              include: { role: true } // This includes the role information
+                              include: { role: true }
                         },
                         category: true,
                         language: true,
-                        tags: true
+                        tags: true,
+                        image: true // Include the image relation
                   }
             })
       }
 
       // Transform the posts to include roleName directly in the user object
+      // and add the filePath from the image relation
       const transformedPosts = posts.map((post) => ({
             ...post,
             user: {
                   ...post.user,
                   roleName: post.user.role?.name || 'User'
-            }
+            },
+            imageFilePath: post.image?.filePath || null // Add this line
       }))
 
       return NextResponse.json(transformedPosts)

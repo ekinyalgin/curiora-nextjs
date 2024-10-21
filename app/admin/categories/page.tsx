@@ -22,6 +22,28 @@ interface Category {
       imageId: number | null
 }
 
+interface CategoryFormData {
+      name: string
+      slug: string
+      description: string | null
+      languageId: string | null
+      parentId: string | null
+      imageId: number | null
+      seoTitle?: string
+      seoDescription?: string
+}
+
+// Remove or comment out the unused interface
+// interface TableComponentProps<T> {
+//     columns: ColumnDef<T>[]
+//     data: T[]
+//     onEdit?: (id: number) => void
+//     onDelete?: (id: number) => void
+//     enableSearch?: boolean
+//     onSearch?: (term: string) => void
+//     onResetSearch?: () => void
+// }
+
 export default function CategoriesPage() {
       const [categories, setCategories] = useState<Category[]>([])
       const [loading, setLoading] = useState(true)
@@ -99,12 +121,23 @@ export default function CategoriesPage() {
             setIsModalOpen(true)
       }
 
-      const handleFormSubmit = async (data: Omit<Category, 'id' | 'children'>) => {
+      const handleFormSubmit = async (data: CategoryFormData) => {
+            const processedData = {
+                  ...data,
+                  languageId: data.languageId ? Number(data.languageId) : null,
+                  parentId: data.parentId ? Number(data.parentId) : null
+            }
+
             const isNewCategory = selectedCategoryId === null
             const optimisticId = isNewCategory ? Math.random() : selectedCategoryId
             const optimisticCategory: Category = {
                   id: optimisticId,
-                  ...data,
+                  name: data.name,
+                  slug: data.slug,
+                  description: data.description,
+                  language: data.languageId ? { id: Number(data.languageId), name: '' } : null,
+                  parent: data.parentId ? { id: Number(data.parentId), name: '' } : null,
+                  imageId: data.imageId,
                   children: []
             }
 
@@ -125,7 +158,7 @@ export default function CategoriesPage() {
                   const response = await fetch(url, {
                         method,
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(processedData)
                   })
 
                   if (!response.ok) throw new Error('Failed to save category')
@@ -143,11 +176,6 @@ export default function CategoriesPage() {
       const handleSearch = async (term: string) => {
             setSearchTerm(term)
             await fetchCategories(term)
-      }
-
-      const handleResetSearch = async () => {
-            setSearchTerm('')
-            await fetchCategories()
       }
 
       const columns: ColumnDef<Category>[] = [
@@ -231,8 +259,6 @@ export default function CategoriesPage() {
                         onDelete={handleDelete}
                         enableSearch={true}
                         onSearch={handleSearch}
-                        searchTerm={searchTerm}
-                        onResetSearch={handleResetSearch}
                   />
 
                   <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -247,7 +273,10 @@ export default function CategoriesPage() {
                                                 : 'Add a new category to the system.'}
                                     </DialogDescription>
                               </DialogHeader>
-                              <CategoryForm categoryId={selectedCategoryId} onSubmit={handleFormSubmit} />
+                              <CategoryForm
+                                    categoryId={selectedCategoryId}
+                                    onSubmit={(data) => handleFormSubmit(data)}
+                              />
                         </DialogContent>
                   </Dialog>
             </div>

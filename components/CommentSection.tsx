@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import CommentItem from './Comments/CommentItem'
 import SignInModal from './auth/SignInModal'
 import CommentSearch from './Comments/CommentSearch'
-import CommentSort from './CommentSort'
+import CommentSort from '@/components/Comments/CommentSort'
 import CommentForm from './Comments/CommentForm'
 import { Archive } from 'lucide-react'
 

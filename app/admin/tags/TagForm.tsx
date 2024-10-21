@@ -59,7 +59,7 @@ export function TagForm({ tagId, onSubmit }: TagFormProps) {
                   setSelectedImage(tagData.imageId ? `/api/images/${tagData.imageId}` : null)
             } catch (error) {
                   console.error('Error fetching tag data:', error)
-                  setNotification({ message: `Error fetching tag data: ${error.message}`, type: 'error' })
+                  setNotification({ message: `Error fetching tag data: ${(error as Error).message}`, type: 'error' })
             } finally {
                   setIsFetching(false)
             }
@@ -107,7 +107,7 @@ export function TagForm({ tagId, onSubmit }: TagFormProps) {
                   setNotification({ message: 'Tag saved successfully', type: 'success' })
             } catch (error) {
                   console.error('Error saving tag:', error)
-                  setNotification({ message: `Error saving tag: ${error.message}`, type: 'error' })
+                  setNotification({ message: `Error saving tag: ${(error as Error).message}`, type: 'error' })
             } finally {
                   setIsLoading(false)
             }
@@ -134,6 +134,7 @@ export function TagForm({ tagId, onSubmit }: TagFormProps) {
                                                                   width={96}
                                                                   height={96}
                                                                   className="rounded-lg w-24 text-right"
+                                                                  unoptimized
                                                             />
                                                             <button
                                                                   type="button"

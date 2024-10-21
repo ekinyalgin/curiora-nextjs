@@ -2,7 +2,6 @@
 import Link from 'next/link'
 import { signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
-import { LogOut } from 'lucide-react'
 
 export default function AdminHeader() {
       const { data: session } = useSession()
@@ -26,14 +25,14 @@ export default function AdminHeader() {
                                           width={40}
                                           height={40}
                                           className="rounded-full border border-gray-700"
+                                          unoptimized
                                     />
                               )}
                               <div className="text-white font-medium">{session?.user?.name}</div>
                               <button
                                     onClick={() => signOut({ callbackUrl: '/' })}
-                                    className="flex items-center bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all"
+                                    className="flex items-center bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-all text-sm"
                               >
-                                    <LogOut className="w-5 h-5 mr-2" />
                                     Sign Out
                               </button>
                         </div>

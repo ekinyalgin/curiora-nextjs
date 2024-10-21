@@ -8,6 +8,17 @@ import { FollowedTagItem } from '@/components/FollowedTagItem'
 import Loading from '@/components/Loading'
 import Image from 'next/image'
 
+// Define a more specific type for the tag
+interface Tag {
+      id: number
+      name: string
+      slug: string
+      followerCount: number
+      featuredImage?: {
+            filePath: string
+      }
+}
+
 async function UserSettingsContent() {
       const session = await getServerSession(authOptions)
 
@@ -24,7 +35,7 @@ async function UserSettingsContent() {
                                     include: {
                                           tag: {
                                                 include: {
-                                                      featuredImage: true
+                                                      image: true
                                                 }
                                           }
                                     }
@@ -55,7 +66,7 @@ async function UserSettingsContent() {
       }
 
       const formattedUserSettings = {
-            languagePreference: userSettings?.language.id.toString() || '',
+            languagePreference: userSettings?.languageId.toString() || '',
             themePreference: userSettings?.themePreference || 'light',
             bio: userSettings?.bio || null
       }
@@ -80,7 +91,7 @@ async function UserSettingsContent() {
 
                   <div className="mt-8">
                         <h2 className="text-2xl font-bold mb-4">Followed Tags</h2>
-                        {userSettings?.user.followedTags.map(({ tag }) => (
+                        {userSettings?.user.followedTags?.map(({ tag }: { tag: Tag }) => (
                               <FollowedTagItem
                                     key={tag.id}
                                     id={tag.id}

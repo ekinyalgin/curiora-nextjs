@@ -11,7 +11,7 @@ import { TagInput } from '@/components/ui/tag-input'
 import { SlugInput, createSlug } from '@/components/ui/slug-input'
 import { checkSlugUniqueness, generateUniqueSlug } from '@/lib/slugUtils'
 import Editor from '@/components/Editor'
-import { FeaturedImageSelect } from '@/components/FeaturedImageSelect'
+import { Button } from '@/components/ui/button'
 
 export default function NewPost() {
       const [post, setPost] = useState({
@@ -91,7 +91,7 @@ export default function NewPost() {
             setPost((prev) => ({ ...prev, [name]: value }))
       }
 
-      const handleFeaturedImageSelect = (image: { filePath: string; id: number }) => {
+      const handleImageSelect = (image: { filePath: string; id: number }) => {
             setPost((prev) => ({
                   ...prev,
                   imageId: image.id
@@ -99,7 +99,7 @@ export default function NewPost() {
             setShowImageSelect(false)
       }
 
-      const handleRemoveFeaturedImage = () => {
+      const handleRemoveImage = () => {
             setPost((prev) => ({
                   ...prev,
                   imageId: null
@@ -191,15 +191,20 @@ export default function NewPost() {
                         value={post.languageId}
                         onChange={(value) => setPost((prev) => ({ ...prev, languageId: value }))}
                   />
-                  <FeaturedImageSelect
-                        imageId={post.imageId}
-                        onSelectImage={() => setShowImageSelect(true)}
-                        onRemoveImage={handleRemoveFeaturedImage}
-                  />
+                  <div>
+                        <Button type="button" onClick={() => setShowImageSelect(true)}>
+                              {post.imageId ? 'Change Featured Image' : 'Select Featured Image'}
+                        </Button>
+                        {post.imageId && (
+                              <Button type="button" variant="destructive" onClick={handleRemoveImage}>
+                                    Remove Featured Image
+                              </Button>
+                        )}
+                  </div>
 
                   <ImageSelect
                         value={post.imageId}
-                        onSelect={handleFeaturedImageSelect}
+                        onSelect={handleImageSelect}
                         isOpen={showImageSelect}
                         onClose={() => setShowImageSelect(false)}
                   />

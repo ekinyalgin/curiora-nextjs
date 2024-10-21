@@ -193,122 +193,148 @@ export default function EditPost({ params }: { params: { id: string } }) {
             }))
       }
 
+      const handleImageButtonClick = (e: React.MouseEvent) => {
+            e.preventDefault() // Prevent form submission
+            setShowImageSelect(true)
+      }
+
       if (isLoading) {
             return <div>Loading...</div>
       }
 
+      if (error) {
+            return <div>Error: {error}</div>
+      }
+
       return (
             <AdminFormLayout title="Edit Post" backLink="/admin/posts" onSubmit={handleSubmit} submitText="Update Post">
-                  <Input
-                        name="title"
-                        value={post.title}
-                        onChange={(e) => handleInputChange('title', e.target.value)}
-                        placeholder="Enter post title"
-                        required
-                  />
-                  <SlugInput
-                        name="slug"
-                        value={post.slug}
-                        onChange={handleInputChange}
-                        sourceValue={post.title}
-                        placeholder="Enter slug or leave empty to generate automatically"
-                        autoGenerate={false}
-                  />
+                  <div className="flex space-x-4 justify-between">
+                        <div className="w-9/12">
+                              <Input
+                                    name="title"
+                                    value={post.title}
+                                    onChange={(e) => handleInputChange('title', e.target.value)}
+                                    placeholder="Enter post title"
+                                    required
+                              />
+                              <SlugInput
+                                    name="slug"
+                                    value={post.slug}
+                                    onChange={handleInputChange}
+                                    sourceValue={post.title}
+                                    placeholder="Enter slug or leave empty to generate automatically"
+                                    autoGenerate={false}
+                              />
 
-                  <Editor content={post.content} onChange={(content) => setPost({ ...post, content })} />
+                              <Editor content={post.content} onChange={(content) => setPost({ ...post, content })} />
+                        </div>
+                        <div className="w-3/12 space-y-4">
+                              <div className="mb-4">
+                                    {post.image ? (
+                                          <div className="border w-full p-4 bg-white">
+                                                <div className="relative block">
+                                                      <Image
+                                                            src={post.image.filePath}
+                                                            alt="Featured Image"
+                                                            width={200}
+                                                            height={200}
+                                                            className=" object-cover rounded-lg mx-auto"
+                                                            unoptimized
+                                                      />
+                                                      <button
+                                                            onClick={handleRemoveImage}
+                                                            className="absolute -top-2 right-2 bg-red-500 text-white rounded-full hover:bg-red-600 p-2"
+                                                      >
+                                                            <X strokeWidth="4" size={12} />
+                                                      </button>
+                                                </div>
+                                          </div>
+                                    ) : (
+                                          <Button onClick={handleImageButtonClick} type="button">
+                                                Select Image
+                                          </Button>
+                                    )}
 
-                  <Select
-                        value={post.status}
-                        onValueChange={(value) => setPost((prev) => ({ ...prev, status: value }))}
-                  >
-                        <SelectTrigger>
-                              <SelectValue placeholder="Select post status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                              <SelectItem value="draft">Draft</SelectItem>
-                              <SelectItem value="published">Published</SelectItem>
-                              <SelectItem value="archived">Archived</SelectItem>
-                        </SelectContent>
-                  </Select>
-                  <Select value={post.type} onValueChange={(value) => setPost((prev) => ({ ...prev, type: value }))}>
-                        <SelectTrigger>
-                              <SelectValue placeholder="Select post type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                              <SelectItem value="article">Article</SelectItem>
-                              <SelectItem value="question">Question</SelectItem>
-                        </SelectContent>
-                  </Select>
-                  <Select
-                        value={post.userId}
-                        onValueChange={(value) => setPost((prev) => ({ ...prev, userId: value }))}
-                  >
-                        <SelectTrigger>
-                              <SelectValue placeholder="Select user" />
-                        </SelectTrigger>
-                        <SelectContent>
-                              {users.map((user: { id: string; name: string }) => (
-                                    <SelectItem key={user.id} value={user.id}>
-                                          {user.name}
-                                    </SelectItem>
-                              ))}
-                        </SelectContent>
-                  </Select>
-                  <Select
-                        value={post.categoryId}
-                        onValueChange={(value) => setPost((prev) => ({ ...prev, categoryId: value }))}
-                  >
-                        <SelectTrigger>
-                              <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                              {categories.map((category: { id: number; name: string }) => (
-                                    <SelectItem key={category.id} value={category.id.toString()}>
-                                          {category.name}
-                                    </SelectItem>
-                              ))}
-                        </SelectContent>
-                  </Select>
-                  <LanguageSelect
-                        value={post.languageId}
-                        onChange={(value) => setPost((prev) => ({ ...prev, languageId: value }))}
-                  />
-                  <div className="mb-4">
-                        {post.image ? (
-                              <div className="relative">
-                                    <Image
-                                          src={post.image.filePath}
-                                          alt="Featured Image"
-                                          width={200}
-                                          height={200}
-                                          className="object-cover rounded-lg"
+                                    <ImageSelect
+                                          isOpen={showImageSelect}
+                                          onClose={() => setShowImageSelect(false)}
+                                          onSelect={handleImageSelect}
+                                          value={post.imageId}
                                     />
-                                    <Button
-                                          onClick={handleRemoveImage}
-                                          className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                                    >
-                                          <X size={16} />
-                                    </Button>
+
+                                    {showEditorImageSelect && (
+                                          <ImageSelect
+                                                onSelect={(image) => handleEditorImageSelect(image.filePath)}
+                                                onClose={() => setShowEditorImageSelect(false)}
+                                                isOpen={showEditorImageSelect}
+                                          />
+                                    )}
                               </div>
-                        ) : (
-                              <Button onClick={() => setShowImageSelect(true)}>Select Image</Button>
-                        )}
+
+                              <Select
+                                    value={post.status}
+                                    onValueChange={(value) => setPost((prev) => ({ ...prev, status: value }))}
+                              >
+                                    <SelectTrigger>
+                                          <SelectValue placeholder="Select post status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                          <SelectItem value="draft">Draft</SelectItem>
+                                          <SelectItem value="published">Published</SelectItem>
+                                          <SelectItem value="archived">Archived</SelectItem>
+                                    </SelectContent>
+                              </Select>
+
+                              <Select
+                                    value={post.categoryId}
+                                    onValueChange={(value) => setPost((prev) => ({ ...prev, categoryId: value }))}
+                              >
+                                    <SelectTrigger>
+                                          <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                          {categories.map((category: { id: number; name: string }) => (
+                                                <SelectItem key={category.id} value={category.id.toString()}>
+                                                      {category.name}
+                                                </SelectItem>
+                                          ))}
+                                    </SelectContent>
+                              </Select>
+                              <LanguageSelect
+                                    value={post.languageId}
+                                    onChange={(value) => setPost((prev) => ({ ...prev, languageId: value }))}
+                              />
+
+                              <Select
+                                    value={post.type}
+                                    onValueChange={(value) => setPost((prev) => ({ ...prev, type: value }))}
+                              >
+                                    <SelectTrigger>
+                                          <SelectValue placeholder="Select post type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                          <SelectItem value="article">Article</SelectItem>
+                                          <SelectItem value="question">Question</SelectItem>
+                                    </SelectContent>
+                              </Select>
+                              <Select
+                                    value={post.userId}
+                                    onValueChange={(value) => setPost((prev) => ({ ...prev, userId: value }))}
+                              >
+                                    <SelectTrigger>
+                                          <SelectValue placeholder="Select user" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                          {users.map((user: { id: string; name: string }) => (
+                                                <SelectItem key={user.id} value={user.id}>
+                                                      {user.name}
+                                                </SelectItem>
+                                          ))}
+                                    </SelectContent>
+                              </Select>
+                        </div>
                   </div>
 
-                  <ImageSelect
-                        isOpen={showImageSelect}
-                        onClose={() => setShowImageSelect(false)}
-                        onSelect={handleImageSelect}
-                        value={post.imageId}
-                  />
-
-                  {showEditorImageSelect && (
-                        <ImageSelect
-                              onSelect={(image) => handleEditorImageSelect(image.filePath)}
-                              onClose={() => setShowEditorImageSelect(false)}
-                              isOpen={showEditorImageSelect}
-                        />
-                  )}
                   <TagInput tags={post.tags} setTags={handleTagsChange} />
                   <Input
                         name="seoTitle"

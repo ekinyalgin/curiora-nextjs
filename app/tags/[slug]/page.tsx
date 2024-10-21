@@ -17,7 +17,7 @@ async function TagContent({ slug }: { slug: string }) {
                         orderBy: { createdAt: 'desc' },
                         include: { user: true }
                   },
-                  featuredImage: true,
+                  image: true,
                   followers: session?.user
                         ? {
                                 where: { userId: session.user.id }
@@ -35,10 +35,10 @@ async function TagContent({ slug }: { slug: string }) {
       return (
             <div className="container mx-auto px-4 py-8">
                   <div className="mb-8">
-                        {tag.featuredImage && (
+                        {tag.image && (
                               <div className="mb-4">
                                     <Image
-                                          src={tag.featuredImage.filePath}
+                                          src={tag.image.filePath}
                                           alt={tag.name}
                                           width={300}
                                           height={200}

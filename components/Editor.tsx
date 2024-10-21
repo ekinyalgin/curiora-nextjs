@@ -185,7 +185,7 @@ const Editor = ({ content, onChange, simpleMode = false }: EditorProps) => {
       }
 
       return (
-            <div className="bg-white border border-gray-200 rounded px-2 py-2">
+            <div className="bg-white border border-gray-200 rounded min-h-72 px-2 py-2">
                   {!simpleMode && (
                         <div className="flex flex-wrap items-center space-x-1 mb-2 [&>Button]:py-1 [&>Button]:px-2 ">
                               <Button

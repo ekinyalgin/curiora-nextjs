@@ -115,7 +115,7 @@ export default function MediaPage() {
                   accessorKey: 'fileSize',
                   header: () => <div className="w-1/12">Size</div>,
                   cell: ({ row }) => (
-                        <div className="text-sm">{`${(row.getValue('fileSize') / 1024).toFixed(2)} KB`}</div>
+                        <div className="text-sm">{`${(Number(row.getValue('fileSize')) / 1024).toFixed(2)} KB`}</div>
                   )
             },
             {

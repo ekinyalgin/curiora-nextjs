@@ -59,6 +59,7 @@ export default function Header() {
                                                                         width={32}
                                                                         height={32}
                                                                         className="rounded-lg"
+                                                                        unoptimized
                                                                   />
                                                             ) : (
                                                                   <div className="w-8 h-8 bg-gray-300 rounded-full"></div>

@@ -16,15 +16,21 @@ import {
 import { RoleForm } from '@/app/admin/roles/RoleForm'
 import Notification from '@/lib/notification'
 import Loading from '@/lib/loading'
+import { ColumnDef } from '@tanstack/react-table'
 
 interface Role {
       id: number
       name: string
-      description: string
+      description: string | null // Change this to allow null
 }
 
 interface SessionUser {
       role?: string
+}
+
+interface RoleFormData {
+      name: string
+      description?: string | null
 }
 
 export default function RoleManagement() {
@@ -98,11 +104,15 @@ export default function RoleManagement() {
             }
       }
 
-      const handleAddRole = async (newRole: Omit<Role, 'id'>) => {
+      const handleAddRole = async (newRole: RoleFormData) => {
+            const roleToAdd = {
+                  ...newRole,
+                  description: newRole.description ?? null
+            }
             const tempId = 0 // Geçici ID
 
             // Optimistik güncelleme - Yeni rolü listeye ekliyoruz
-            const optimisticRole = { ...newRole, id: tempId }
+            const optimisticRole = { ...roleToAdd, id: tempId }
             setRoles((prevRoles) => [...prevRoles, optimisticRole])
 
             try {
@@ -148,23 +158,22 @@ export default function RoleManagement() {
             }
       }
 
-      const columns: ExtendedColumnDef<Role>[] = [
+      const columns: ColumnDef<Role>[] = [
             {
                   accessorKey: 'id',
                   header: 'ID',
-                  headerClassName: '',
-                  cell: ({ row }) => <div className="text-center font-medium">{row.original.id}</div>
+                  cell: ({ row }: { row: { original: { id: number } } }) => (
+                        <div className="text-center font-medium">{row.original.id}</div>
+                  )
             },
             {
                   accessorKey: 'name',
-                  header: 'Name',
-                  headerClassName: 'w-3/12 text-left',
-                  cell: ({ row }) => <div className="font-semibold">{row.original.name}</div>
+                  header: () => <div className="w-3/12">Name</div>,
+                  cell: ({ row }) => <div className="font-semibold">{row.getValue('name')}</div>
             },
             {
                   accessorKey: 'description',
-                  header: 'Description',
-                  headerClassName: 'w-8/12  text-left',
+                  header: () => <div className="w-8/12">Description</div>,
                   cell: ({ row }) => (
                         <div className="text-gray-500 text-sm leading-relaxed">{row.original.description}</div>
                   )

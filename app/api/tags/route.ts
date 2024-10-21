@@ -66,7 +66,7 @@ export async function PUT(request: Request) {
             return NextResponse.json(tag)
       } catch (error) {
             console.error('Error updating tag:', error)
-            return NextResponse.json({ error: error.message || 'Error updating tag' }, { status: 500 })
+            return NextResponse.json({ error: (error as Error).message || 'Error updating tag' }, { status: 500 })
       }
 }
 

@@ -19,7 +19,7 @@ interface Post {
       language: { name: string }
       publishedAt: string | null
       imageId: number | null
-      image: { filePath: string } | null
+      image: { id: number; filePath: string } | null
 }
 
 export default function PostsPage() {
@@ -36,6 +36,7 @@ export default function PostsPage() {
                   const response = await fetch(`/api/posts?search=${encodeURIComponent(search)}`)
                   if (!response.ok) throw new Error('Failed to fetch posts')
                   const data = await response.json()
+                  console.log('Fetched posts:', data) // API yanıtını logla
                   setPosts(data)
             } catch (err) {
                   setError('Failed to load posts. Please try again later.')
@@ -89,19 +90,24 @@ export default function PostsPage() {
             {
                   accessorKey: 'image',
                   header: () => <div className="w-1/12">Image</div>,
-                  cell: ({ row }) =>
-                        row.original.image ? (
-                              <div className="relative w-10 h-10">
+                  cell: ({ row }) => (
+                        <div className="relative w-10 h-10">
+                              {row.original.image ? (
                                     <Image
                                           src={row.original.image.filePath}
                                           alt={row.original.title}
-                                          fill
+                                          width={40}
+                                          height={40}
                                           className="object-cover rounded"
+                                          unoptimized
                                     />
-                              </div>
-                        ) : (
-                              <div>No image</div>
-                        )
+                              ) : (
+                                    <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-gray-500 text-xs">
+                                          No image
+                                    </div>
+                              )}
+                        </div>
+                  )
             },
             {
                   accessorKey: 'title',
@@ -171,8 +177,6 @@ export default function PostsPage() {
                         onDelete={handleDelete}
                         enableSearch={true}
                         onSearch={handleSearch}
-                        searchTerm={searchTerm}
-                        searchPlaceholder="Search posts..."
                   />
             </div>
       )

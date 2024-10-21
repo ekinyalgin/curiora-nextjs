@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 
 interface RoleFormData {
-      id?: number
       name: string
-      description?: string
+      description?: string | null
 }
 
 interface RoleFormProps {
@@ -16,7 +15,7 @@ interface RoleFormProps {
       onSubmit: (data: RoleFormData) => void
 }
 
-export function RoleForm({ roleId, onSubmit }: RoleFormProps) {
+export const RoleForm: React.FC<RoleFormProps> = ({ roleId, onSubmit }) => {
       const [isLoading, setIsLoading] = useState(false)
       const [isFetching, setIsFetching] = useState(false)
 

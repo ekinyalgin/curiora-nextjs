@@ -23,11 +23,23 @@ interface Tag {
       id: number
       name: string
       slug: string
-      description: string
+      description: string | null
       imageId: number | null
       language: {
+            id: number
             name: string
-      }
+      } | null
+}
+
+interface TagFormData {
+      id?: number
+      name: string
+      slug: string
+      description?: string | null
+      imageId: number | null
+      languageId: number | null
+      seoTitle?: string
+      seoDescription?: string
 }
 
 interface SessionUser {
@@ -74,9 +86,13 @@ export default function TagManagement() {
             }
       }, [status, session, router, fetchTags])
 
-      const handleAddTag = async (newTag: Omit<Tag, 'id'>) => {
+      const handleAddTag = async (newTag: Omit<TagFormData, 'id'>) => {
             const tempId = Date.now()
-            const optimisticTag = { ...newTag, id: tempId } as Tag
+            const optimisticTag = {
+                  ...newTag,
+                  id: tempId,
+                  language: newTag.languageId ? { id: newTag.languageId, name: '' } : null
+            } as Tag
             setTags((prevTags) => [...prevTags, optimisticTag])
             setIsAddModalOpen(false)
 
@@ -119,13 +135,13 @@ export default function TagManagement() {
             }
       }
 
-      const handleUpdateTag = async (updatedTag: Tag) => {
+      const handleUpdateTag = async (updatedTag: TagFormData) => {
             const originalTag = tags.find((tag) => tag.id === updatedTag.id)
-            setTags((prevTags) => prevTags.map((tag) => (tag.id === updatedTag.id ? updatedTag : tag)))
+            setTags((prevTags) => prevTags.map((tag) => (tag.id === updatedTag.id ? { ...tag, ...updatedTag } : tag)))
             setIsAddModalOpen(false)
 
             try {
-                  console.log('Updating tag with data:', updatedTag) // Gönderilen veriyi logla
+                  console.log('Updating tag with data:', updatedTag)
                   const response = await fetch(`/api/tags/${updatedTag.id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -133,10 +149,10 @@ export default function TagManagement() {
                   })
                   if (!response.ok) {
                         const errorData = await response.json()
-                        throw new Error(`Failed to update tag: ${errorData.error || response.statusText}`)
+                        throw new Error(errorData.error || response.statusText)
                   }
                   const updatedTagFromServer = await response.json()
-                  console.log('Updated tag from server:', updatedTagFromServer) // Sunucudan gelen cevabı logla
+                  console.log('Updated tag from server:', updatedTagFromServer)
                   setTags((prevTags) =>
                         prevTags.map((tag) => (tag.id === updatedTagFromServer.id ? updatedTagFromServer : tag))
                   )
@@ -144,7 +160,7 @@ export default function TagManagement() {
             } catch (err) {
                   console.error('Error updating tag:', err)
                   setTags((prevTags) => prevTags.map((tag) => (tag.id === updatedTag.id ? originalTag! : tag)))
-                  setNotification({ message: `Failed to update tag: ${err.message}`, type: 'error' })
+                  setNotification({ message: `Failed to update tag: ${(err as Error).message}`, type: 'error' })
             }
       }
 
@@ -168,15 +184,16 @@ export default function TagManagement() {
             {
                   accessorKey: 'imageId',
                   header: 'Image',
-                  headerClassName: 'w-1/12',
                   cell: ({ row }) =>
                         row.original.imageId ? (
                               <div className="relative w-10 h-10">
                                     <Image
                                           src={`/api/images/${row.original.imageId}`}
                                           alt={row.original.name}
-                                          fill
+                                          width={40}
+                                          height={40}
                                           className="object-cover rounded"
+                                          unoptimized
                                     />
                               </div>
                         ) : (
@@ -186,7 +203,6 @@ export default function TagManagement() {
             {
                   accessorKey: 'name',
                   header: 'Name',
-                  headerClassName: 'w-3/12',
                   cell: ({ row }) => (
                         <Link href={`/tags/${row.original.slug}`} className="font-semibold hover:underline">
                               {row.original.name}
@@ -196,19 +212,16 @@ export default function TagManagement() {
             {
                   accessorKey: 'slug',
                   header: 'Slug',
-                  headerClassName: 'w-2/12',
                   cell: ({ row }) => <div className="text-gray-400 text-sm">{row.original.slug}</div>
             },
             {
                   accessorKey: 'description',
                   header: 'Description',
-                  headerClassName: 'w-4/12',
                   cell: ({ row }) => <div className="text-gray-400 text-sm">{row.original.description}</div>
             },
             {
                   header: 'Language',
-                  accessorKey: 'language.name',
-                  headerClassName: 'w-1/12 text-sm'
+                  accessorKey: 'language.name'
             }
       ]
 
@@ -242,7 +255,7 @@ export default function TagManagement() {
                                     <TagForm
                                           tagId={editingTagId}
                                           onSubmit={(tag) =>
-                                                editingTagId ? handleUpdateTag(tag as Tag) : handleAddTag(tag)
+                                                editingTagId ? handleUpdateTag(tag as TagFormData) : handleAddTag(tag)
                                           }
                                     />
                               </DialogContent>
@@ -253,7 +266,6 @@ export default function TagManagement() {
                         data={tags}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
-                        headerClassName="bg-gray-100 font-bold"
                         enableCheckbox={false}
                         onSearch={handleSearch}
                   />

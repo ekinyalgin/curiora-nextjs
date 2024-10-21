@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-//import { TableComponent } from '@/components/TableComponent'
+import { TableComponent } from '@/components/TableComponent'
 import { useSession } from 'next-auth/react'
 import { ReportCategory } from '@prisma/client'
 import { ColumnDef } from '@tanstack/react-table'
@@ -20,7 +20,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { TableComponent } from '@/components/TableComponent'
+import Notification from '@/lib/notification'
+import Loading from '@/lib/loading'
 
 interface Report {
       id: number
@@ -53,106 +54,124 @@ export default function ReportsPanel() {
       const [reports, setReports] = useState<Report[]>([])
       const [activeTab, setActiveTab] = useState<'comment' | 'post'>('comment')
       const [isHardDeleteConfirmation, setIsHardDeleteConfirmation] = useState<{ [key: string]: boolean }>({})
+      const [loading, setLoading] = useState(true)
+      const [error, setError] = useState<string | null>(null)
+      const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-      const fetchReports = useCallback(async () => {
-            try {
-                  const response = await fetch(`/api/reports?filter=${activeTab}`)
-                  if (!response.ok) {
-                        throw new Error('Failed to fetch reports')
+      const fetchReports = useCallback(
+            async (search: string = '') => {
+                  try {
+                        setLoading(true)
+                        const response = await fetch(
+                              `/api/reports?filter=${activeTab}&search=${encodeURIComponent(search)}`
+                        )
+                        if (!response.ok) throw new Error('Failed to fetch reports')
+                        const data: Report[] = await response.json()
+                        setReports(data)
+                        setError(null)
+                  } catch (error) {
+                        setError('Failed to load reports. Please try again later.')
+                        console.error('Error fetching reports:', error)
+                  } finally {
+                        setLoading(false)
                   }
-                  const data: Report[] = await response.json() // Tip belirtildi
-                  setReports(data)
-            } catch (error) {
-                  console.error('Error fetching reports:', error)
-            }
-      }, [activeTab])
+            },
+            [activeTab]
+      )
 
       useEffect(() => {
-            if (status !== 'loading') {
+            if (status === 'authenticated' && session?.user?.role === 'admin') {
                   fetchReports()
             }
-      }, [status, activeTab, fetchReports])
+      }, [status, session, activeTab, fetchReports])
 
-      const handleCommentAction = async (
-            commentId: string,
-            action:
-                  | 'approve'
-                  | 'pending'
-                  | 'archive'
-                  | 'softDelete'
-                  | 'hardDelete'
-                  | 'reject'
-                  | 'delete'
-                  | 'restoreDeleted'
-      ) => {
+      const handleCommentAction = async (commentId: string, action: string) => {
+            // Optimistic update
+            const updatedReports = reports.map((report) => {
+                  if (report.commentId === commentId) {
+                        return {
+                              ...report,
+                              comment: { ...report.comment!, status: action as 'pending' | 'approved' | 'archived' }
+                        }
+                  }
+                  return report
+            })
+            setReports(updatedReports as Report[])
+
             try {
                   const response = await fetch(`/api/comments/${commentId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action })
                   })
-                  if (!response.ok) {
-                        throw new Error('Failed to update comment status')
-                  }
-                  await fetchReports()
+                  if (!response.ok) throw new Error('Failed to update comment status')
+                  setNotification({ message: 'Comment status updated successfully', type: 'success' })
             } catch (error) {
                   console.error('Error updating comment status:', error)
+                  setNotification({ message: 'Failed to update comment status. Please try again.', type: 'error' })
+                  // Revert the optimistic update
+                  await fetchReports()
             }
       }
 
       const handlePostAction = async (postId: string, action: 'publish' | 'draft') => {
+            // Optimistic update
+            const updatedReports = reports.map((report) => {
+                  if (report.postId === postId) {
+                        return {
+                              ...report,
+                              post: { ...report.post!, status: action === 'publish' ? 'published' : 'draft' }
+                        }
+                  }
+                  return report
+            })
+            setReports(updatedReports as Report[])
+
             try {
                   const response = await fetch(`/api/posts/${postId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ status: action === 'publish' ? 'published' : 'draft' })
                   })
-                  if (!response.ok) {
-                        throw new Error('Failed to update post status')
-                  }
-                  await fetchReports()
+                  if (!response.ok) throw new Error('Failed to update post status')
+                  setNotification({ message: 'Post status updated successfully', type: 'success' })
             } catch (error) {
                   console.error('Error updating post status:', error)
-            }
-      }
-
-      const handleReportAction = async (reportId: string, commentId: string, action: string) => {
-            try {
-                  await handleCommentAction(commentId, action as (typeof handleCommentAction.arguments)[1])
-                  const response = await fetch(`/api/reports/${reportId}`, {
-                        method: 'DELETE'
-                  })
-                  if (!response.ok) {
-                        throw new Error('Failed to delete report')
-                  }
+                  setNotification({ message: 'Failed to update post status. Please try again.', type: 'error' })
+                  // Revert the optimistic update
                   await fetchReports()
-            } catch (error) {
-                  console.error('Error handling report action:', error)
             }
       }
 
       const handleDeleteReport = async (reportId: string) => {
+            // Optimistic update
+            const updatedReports = reports.filter((report) => report.id.toString() !== reportId)
+            setReports(updatedReports as Report[])
+
             try {
-                  const response = await fetch(`/api/reports/${reportId}`, {
-                        method: 'DELETE'
-                  })
-                  if (!response.ok) {
-                        throw new Error('Failed to delete report')
-                  }
-                  await fetchReports()
+                  const response = await fetch(`/api/reports/${reportId}`, { method: 'DELETE' })
+                  if (!response.ok) throw new Error('Failed to delete report')
+                  setNotification({ message: 'Report deleted successfully', type: 'success' })
             } catch (error) {
                   console.error('Error deleting report:', error)
+                  setNotification({ message: 'Failed to delete report. Please try again.', type: 'error' })
+                  // Revert the optimistic update
+                  await fetchReports()
             }
       }
 
+      const handleSearch = async (term: string) => {
+            await fetchReports(term)
+      }
+
+      const handleReportAction = async (reportId: string, commentId: string, action: string) => {
+            // TODO: Implement report action logic
+            console.log('Report action:', reportId, commentId, action)
+      }
+
       const handleHardDeleteConfirmation = async (reportId: string, commentId: string) => {
-            try {
-                  await handleCommentAction(commentId, 'hardDelete')
-                  await handleDeleteReport(reportId)
-                  setIsHardDeleteConfirmation((prev) => ({ ...prev, [commentId]: false }))
-            } catch (error) {
-                  console.error('Error hard deleting comment:', error)
-            }
+            // TODO: Implement hard delete confirmation logic
+            console.log('Hard delete confirmation:', reportId, commentId)
       }
 
       const postColumns: ColumnDef<Report>[] = [
@@ -384,12 +403,21 @@ export default function ReportsPanel() {
             }
       ]
 
-      if (status === 'loading') return <div>Loading...</div>
-      if (!session || session.user.role !== 'admin') return <div>Access denied</div>
+      if (status === 'loading' || loading) {
+            return <Loading />
+      }
+      if (error) {
+            return <div>Error: {error}</div>
+      }
+      if (status === 'authenticated' && session.user.role !== 'admin') {
+            return <div>Unauthorized</div>
+      }
 
       return (
-            <div className="container mx-auto p-4">
-                  <h1 className="text-2xl font-bold mb-4">Reports</h1>
+            <div className="container mx-auto py-10">
+                  <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-3xl font-bold">Report Management</h1>
+                  </div>
                   <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'comment' | 'post')}>
                         <TabsList>
                               <TabsTrigger value="comment">Comment Reports</TabsTrigger>
@@ -397,27 +425,32 @@ export default function ReportsPanel() {
                         </TabsList>
                         <TabsContent value="post">
                               <TableComponent
-                                    title=""
-                                    addNewLink=""
-                                    addNewText=""
                                     columns={postColumns}
                                     data={reports
                                           .filter((report) => report.postId)
                                           .map((report) => ({ ...report, id: Number(report.id) }))}
+                                    onSearch={handleSearch}
+                                    enableSearch={true}
                               />
                         </TabsContent>
                         <TabsContent value="comment">
                               <TableComponent
-                                    title=""
-                                    addNewLink=""
-                                    addNewText=""
                                     columns={commentColumns}
                                     data={reports
                                           .filter((report) => report.commentId)
                                           .map((report) => ({ ...report, id: Number(report.id) }))}
+                                    onSearch={handleSearch}
+                                    enableSearch={true}
                               />
                         </TabsContent>
                   </Tabs>
+                  {notification && (
+                        <Notification
+                              message={notification.message}
+                              type={notification.type}
+                              onClose={() => setNotification(null)}
+                        />
+                  )}
             </div>
       )
 }

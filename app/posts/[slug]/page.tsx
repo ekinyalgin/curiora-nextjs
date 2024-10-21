@@ -5,6 +5,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 import { notFound } from 'next/navigation'
 import Loading from '@/components/Loading'
 import { Suspense } from 'react'
+import { Metadata } from 'next'
 
 // Comment tipini güncelleyelim
 interface Comment {
@@ -23,6 +24,59 @@ interface Comment {
       parentCommentId: number | null
 }
 
+async function getPost(slug: string) {
+      return prisma.post.findUnique({
+            where: { slug },
+            include: {
+                  user: true,
+                  tags: true,
+                  image: true
+            }
+      })
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+      const post = await getPost(params.slug)
+
+      if (!post) {
+            return {
+                  title: 'Post Not Found'
+            }
+      }
+
+      const seoTitle = post.seoTitle || `${post.title} | Your Blog Name`
+      const seoDescription = post.seoDescription || post.excerpt || `Read about ${post.title} on Your Blog Name`
+      const seoKeywords = post.tags ? post.tags.map((tag) => tag.name).join(', ') : ''
+
+      return {
+            title: seoTitle,
+            description: seoDescription,
+            keywords: seoKeywords,
+            authors: [{ name: post.user.name || 'Unknown Author' }],
+            openGraph: {
+                  title: seoTitle,
+                  description: seoDescription,
+                  url: `https://yourblog.com/posts/${post.slug}`,
+                  siteName: 'Your Blog Name',
+                  images: [
+                        {
+                              url: post.image?.filePath || 'https://yourblog.com/default-og-image.jpg',
+                              width: 1200,
+                              height: 630,
+                              alt: post.title
+                        }
+                  ],
+                  type: 'article'
+            },
+            twitter: {
+                  card: 'summary_large_image',
+                  title: seoTitle,
+                  description: seoDescription,
+                  creator: '@yourtwitterhandle'
+            }
+      }
+}
+
 export default async function PostPage({ params }: { params: { slug: string } }) {
       return (
             <Suspense fallback={<Loading />}>
@@ -33,47 +87,39 @@ export default async function PostPage({ params }: { params: { slug: string } })
 
 async function PostContent({ slug }: { slug: string }) {
       const session = await getServerSession(authOptions)
-      let post
-
-      try {
-            post = await prisma.post.findUnique({
-                  where: { slug: slug },
-                  include: {
-                        user: {
-                              include: {
-                                    role: true
-                              }
+      const post = await prisma.post.findUnique({
+            where: { slug },
+            include: {
+                  user: {
+                        include: {
+                              role: true
+                        }
+                  },
+                  category: true,
+                  language: true,
+                  tags: true,
+                  comments: {
+                        include: {
+                              user: true,
+                              voteCount: true,
+                              votes: session
+                                    ? {
+                                            where: { userId: session.user.id }
+                                      }
+                                    : false
                         },
-                        category: true,
-                        language: true,
-                        tags: true,
-                        comments: {
-                              include: {
-                                    user: true,
-                                    voteCount: true,
-                                    votes: session
-                                          ? {
-                                                  where: { userId: session.user.id }
-                                            }
-                                          : false
-                              },
-                              ...(session?.user?.role === 'admin' || session?.user?.role === 'admin'
-                                    ? {}
-                                    : { where: { status: 'approved' } }),
-                              orderBy: { createdAt: 'desc' }
-                        },
-                        voteCount: true,
-                        votes: session
-                              ? {
-                                      where: { userId: session.user.id }
-                                }
-                              : false
-                  }
-            })
-      } catch (error) {
-            console.error('Error fetching post:', error)
-            return <div>Error loading post</div>
-      }
+                        ...(session?.user?.role === 'admin' ? {} : { where: { status: 'approved' } }),
+                        orderBy: { createdAt: 'desc' }
+                  },
+                  voteCount: true,
+                  votes: session
+                        ? {
+                                where: { userId: session.user.id }
+                          }
+                        : false,
+                  image: true
+            }
+      })
 
       if (!post) {
             notFound()
@@ -105,13 +151,14 @@ async function PostContent({ slug }: { slug: string }) {
                         createdAt: comment.createdAt.toISOString(),
                         user: {
                               id: comment.user.id,
-                              name: comment.user.name || 'Unknown User', // Varsayılan değer ekledik
-                              image: comment.user.image || undefined // undefined olarak bırakıyoruz eğer null ise
+                              name: comment.user.name || 'Unknown User',
+                              image: comment.user.image || undefined
                         },
                         userVote: comment.votes && comment.votes.length > 0 ? comment.votes[0].voteType : null,
                         parentCommentId: comment.parentCommentId
                   })
-            )
+            ),
+            coverImage: post.image?.filePath
       }
 
       return (

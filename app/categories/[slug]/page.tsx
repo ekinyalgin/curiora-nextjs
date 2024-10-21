@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma'
 import { PostItem } from '@/components/PostItem'
+import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 
-export default async function CategoryPage({ params }: { params: { slug: string } }) {
-      const category = await prisma.category.findUnique({
-            where: { slug: params.slug },
+async function getCategory(slug: string) {
+      return prisma.category.findUnique({
+            where: { slug },
             include: {
                   posts: {
                         where: { status: 'published' },
@@ -12,9 +14,45 @@ export default async function CategoryPage({ params }: { params: { slug: string 
                   }
             }
       })
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+      const category = await getCategory(params.slug)
 
       if (!category) {
-            return <div>Category not found</div>
+            return {
+                  title: 'Category Not Found'
+            }
+      }
+
+      const seoTitle = category.seoTitle || `${category.name} | Your Blog Name`
+      const seoDescription =
+            category.seoDescription || `Explore posts in the ${category.name} category on Your Blog Name`
+
+      return {
+            title: seoTitle,
+            description: seoDescription,
+            openGraph: {
+                  title: seoTitle,
+                  description: seoDescription,
+                  url: `https://yourblog.com/categories/${category.slug}`,
+                  siteName: 'Your Blog Name',
+                  type: 'website'
+            },
+            twitter: {
+                  card: 'summary_large_image',
+                  title: seoTitle,
+                  description: seoDescription,
+                  creator: '@yourtwitterhandle'
+            }
+      }
+}
+
+export default async function CategoryPage({ params }: { params: { slug: string } }) {
+      const category = await getCategory(params.slug)
+
+      if (!category) {
+            notFound()
       }
 
       return (

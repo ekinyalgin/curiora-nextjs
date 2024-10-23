@@ -48,6 +48,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       const seoTitle = post.seoTitle || `${post.title} | Your Blog Name`
       const seoDescription = post.seoDescription || post.excerpt || `Read about ${post.title} on Your Blog Name`
       const seoKeywords = post.tags ? post.tags.map((tag) => tag.name).join(', ') : ''
+      const canonicalUrl = `https://yourblog.com/posts/${post.slug}`
 
       return {
             title: seoTitle,
@@ -57,7 +58,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
             openGraph: {
                   title: seoTitle,
                   description: seoDescription,
-                  url: `https://yourblog.com/posts/${post.slug}`,
+                  url: canonicalUrl,
                   siteName: 'Your Blog Name',
                   images: [
                         {
@@ -74,6 +75,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
                   title: seoTitle,
                   description: seoDescription,
                   creator: '@yourtwitterhandle'
+            },
+            // Canonical URL'yi ekleyin
+            alternates: {
+                  canonical: canonicalUrl,
             }
       }
 }

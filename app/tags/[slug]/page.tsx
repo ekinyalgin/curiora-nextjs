@@ -3,6 +3,7 @@ import { PostItem } from '@/components/PostItem'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Script from 'next/script'
+import { env } from 'process'
 
 async function getTag(slug: string) {
       return prisma.tag.findUnique({
@@ -29,13 +30,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       const seoTitle = tag.seoTitle || `${tag.name} | Your Blog Name`
       const seoDescription = tag.seoDescription || `Explore posts tagged with ${tag.name} on Your Blog Name`
 
+      const tagUrl = `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_TAG_PATH}/${tag.slug}`
+
       return {
             title: seoTitle,
             description: seoDescription,
             openGraph: {
                   title: seoTitle,
                   description: seoDescription,
-                  url: `https://yourblog.com/tags/${tag.slug}`,
+                  url: tagUrl,
                   siteName: 'Your Blog Name',
                   type: 'website'
             },
@@ -60,15 +63,15 @@ export default async function TagPage({ params }: { params: { slug: string } }) 
             '@type': 'CollectionPage',
             mainEntityOfPage: {
                   '@type': 'WebPage',
-                  '@id': `https://yourblog.com/tags/${tag.slug}`
+                  '@id': `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_TAG_PATH}/${tag.slug}`
             },
             name: tag.name,
             description: tag.seoDescription || `Explore posts tagged with ${tag.name} on Your Blog Name`,
-            url: `https://yourblog.com/tags/${tag.slug}`,
+            url: `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_TAG_PATH}/${tag.slug}`,
             isPartOf: {
                   '@type': 'WebSite',
                   name: 'Your Blog Name',
-                  url: 'https://yourblog.com'
+                  url: env.NEXT_PUBLIC_BASE_URL
             },
             inLanguage: 'en-US', // Adjust this based on your blog's language
             datePublished: tag.createdAt.toISOString(),

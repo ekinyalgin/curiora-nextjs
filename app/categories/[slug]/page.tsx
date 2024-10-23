@@ -3,6 +3,7 @@ import { PostItem } from '@/components/PostItem'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Script from 'next/script'
+import { env } from 'process'
 
 async function getCategory(slug: string) {
       return prisma.category.findUnique({
@@ -30,13 +31,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       const seoDescription =
             category.seoDescription || `Explore posts in the ${category.name} category on Your Blog Name`
 
+      const categoryUrl = `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_CATEGORY_PATH}/${category.slug}`
+
       return {
             title: seoTitle,
             description: seoDescription,
             openGraph: {
                   title: seoTitle,
                   description: seoDescription,
-                  url: `https://yourblog.com/categories/${category.slug}`,
+                  url: categoryUrl,
                   siteName: 'Your Blog Name',
                   type: 'website'
             },
@@ -61,15 +64,15 @@ export default async function CategoryPage({ params }: { params: { slug: string 
             '@type': 'CollectionPage',
             mainEntityOfPage: {
                   '@type': 'WebPage',
-                  '@id': `https://yourblog.com/categories/${category.slug}`
+                  '@id': `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_CATEGORY_PATH}/${category.slug}`
             },
             name: category.name,
             description: category.seoDescription || `Explore posts in the ${category.name} category on Your Blog Name`,
-            url: `https://yourblog.com/categories/${category.slug}`,
+            url: `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_CATEGORY_PATH}/${category.slug}`,
             isPartOf: {
                   '@type': 'WebSite',
                   name: 'Your Blog Name',
-                  url: 'https://yourblog.com'
+                  url: env.NEXT_PUBLIC_BASE_URL
             },
             inLanguage: 'en-US', // Adjust this based on your blog's language
             datePublished: category.createdAt.toISOString(),

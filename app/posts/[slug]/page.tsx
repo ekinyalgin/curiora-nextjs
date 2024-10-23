@@ -7,6 +7,7 @@ import Loading from '@/components/Loading'
 import { Suspense } from 'react'
 import { Metadata } from 'next'
 import Script from 'next/script'
+import { env } from 'process'
 
 // Comment tipini güncelleyelim
 interface Comment {
@@ -48,7 +49,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       const seoTitle = post.seoTitle || `${post.title} | Your Blog Name`
       const seoDescription = post.seoDescription || post.excerpt || `Read about ${post.title} on Your Blog Name`
       const seoKeywords = post.tags ? post.tags.map((tag) => tag.name).join(', ') : ''
-      const canonicalUrl = `https://yourblog.com/posts/${post.slug}`
+      const canonicalUrl = `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_POST_PATH}/${post.slug}`
 
       return {
             title: seoTitle,
@@ -62,7 +63,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
                   siteName: 'Your Blog Name',
                   images: [
                         {
-                              url: post.image?.filePath || 'https://yourblog.com/default-og-image.jpg',
+                              url: post.image?.filePath || `${env.NEXT_PUBLIC_BASE_URL}/default-og-image.jpg`,
                               width: 1200,
                               height: 630,
                               alt: post.title
@@ -183,14 +184,14 @@ async function PostContent({ slug }: { slug: string }) {
                   name: 'Your Blog Name',
                   logo: {
                         '@type': 'ImageObject',
-                        url: 'https://yourblog.com/logo.png'
+                        url: `${env.NEXT_PUBLIC_BASE_URL}/logo.png`
                   }
             },
             description: transformedPost.excerpt,
             keywords: transformedPost.tags.map((tag) => tag.name).join(', '),
             mainEntityOfPage: {
                   '@type': 'WebPage',
-                  '@id': `https://yourblog.com/posts/${transformedPost.slug}`
+                  '@id': `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_POST_PATH}/${transformedPost.slug}`
             }
       }
 

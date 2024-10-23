@@ -31,7 +31,7 @@ export default function Header() {
                         <div className="flex justify-between items-center">
                               <div className="flex items-center">
                                     <Link href="/" className="text-xl font-bold mr-6">
-                                          Your Logo
+                                          Curiora
                                     </Link>
                                     <Link href="/about" className="text-gray-600 hover:text-gray-900">
                                           About

@@ -18,6 +18,8 @@ import {
 import { TagForm } from '@/app/admin/tags/TagForm'
 import Link from 'next/link'
 import Notification from '@/lib/notification'
+import { env } from 'process'
+import { routes } from '@/lib/routes'
 
 interface Tag {
       id: number
@@ -204,7 +206,10 @@ export default function TagManagement() {
                   accessorKey: 'name',
                   header: 'Name',
                   cell: ({ row }) => (
-                        <Link href={`/tags/${row.original.slug}`} className="font-semibold hover:underline">
+                        <Link 
+                              href={`${routes.tags}/${row.original.slug}`}
+                              className="font-semibold hover:underline"
+                        >
                               {row.original.name}
                         </Link>
                   )

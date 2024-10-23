@@ -10,6 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { CategoryForm } from './CategoryForm'
 import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
+import { env } from 'process'
+import { routes } from '@/lib/routes'
 
 interface Category {
       id: number
@@ -204,7 +207,12 @@ export default function CategoriesPage() {
                         return (
                               <div className={`flex items-center ${indent}`}>
                                     {row.original.parent && <ArrowRight strokeWidth="1.5" className="w-4 h-4 mr-2" />}
-                                    <span className="font-semibold">{row.getValue('name')}</span>
+                                    <Link 
+                                          href={`${routes.categories}/${row.original.slug}`}
+                                          className="font-semibold hover:underline"
+                                    >
+                                          {row.getValue('name')}
+                                    </Link>
                               </div>
                         )
                   }

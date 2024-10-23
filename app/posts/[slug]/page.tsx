@@ -8,6 +8,8 @@ import { Suspense } from 'react'
 import { Metadata } from 'next'
 import Script from 'next/script'
 import { env } from 'process'
+import Breadcrumb from '@/components/Breadcrumb'
+import { routes } from '@/lib/routes'
 
 // Comment tipini güncelleyelim
 interface Comment {
@@ -49,7 +51,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       const seoTitle = post.seoTitle || `${post.title} | Your Blog Name`
       const seoDescription = post.seoDescription || post.excerpt || `Read about ${post.title} on Your Blog Name`
       const seoKeywords = post.tags ? post.tags.map((tag) => tag.name).join(', ') : ''
-      const canonicalUrl = `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_POST_PATH}/${post.slug}`
+      const canonicalUrl = `${routes.posts}/${post.slug}`
 
       return {
             title: seoTitle,
@@ -191,9 +193,17 @@ async function PostContent({ slug }: { slug: string }) {
             keywords: transformedPost.tags.map((tag) => tag.name).join(', '),
             mainEntityOfPage: {
                   '@type': 'WebPage',
-                  '@id': `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_POST_PATH}/${transformedPost.slug}`
+                  '@id': `${routes.posts}/${transformedPost.slug}`
             }
       }
+
+      const breadcrumbItems = [
+            { label: 'Posts', href: routes.posts },
+      ]
+
+      const currentCategory = post.category 
+        ? { label: post.category.name, href: `${routes.categories}/${post.category.slug}` }
+        : undefined
 
       return (
             <>
@@ -203,6 +213,11 @@ async function PostContent({ slug }: { slug: string }) {
                         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
                   />
                   <div className="container mx-auto px-4 py-8">
+                        <Breadcrumb 
+                              items={breadcrumbItems} 
+                              currentCategory={currentCategory}
+                              currentPost={{ title: post.title }}
+                        />
                         <PostComponent post={transformedPost} showEditLink={isAdmin} />
                   </div>
             </>

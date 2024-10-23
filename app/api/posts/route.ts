@@ -71,15 +71,15 @@ export async function POST(request: Request) {
                         tags: {
                               connectOrCreate: tags.map((tag: string) => ({
                                     where: {
-                                          name_language_id: {
+                                          name_languageId: {
                                                 name: tag,
-                                                language_id: parseInt(language.id)
+                                                languageId: parseInt(language.id)
                                           }
                                     },
                                     create: {
                                           name: tag,
                                           slug: slugify(tag, { lower: true }),
-                                          language_id: parseInt(language.id)
+                                          languageId: parseInt(language.id)
                                     }
                               }))
                         }

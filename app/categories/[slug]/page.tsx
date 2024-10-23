@@ -3,7 +3,8 @@ import { PostItem } from '@/components/PostItem'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Script from 'next/script'
-import { env } from 'process'
+import Breadcrumb from '@/components/Breadcrumb'
+import { routes } from '@/lib/routes'
 
 async function getCategory(slug: string) {
       return prisma.category.findUnique({
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       const seoDescription =
             category.seoDescription || `Explore posts in the ${category.name} category on Your Blog Name`
 
-      const categoryUrl = `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_CATEGORY_PATH}/${category.slug}`
+      const categoryUrl = `${routes.categories}/${category.slug}`
 
       return {
             title: seoTitle,
@@ -64,20 +65,25 @@ export default async function CategoryPage({ params }: { params: { slug: string 
             '@type': 'CollectionPage',
             mainEntityOfPage: {
                   '@type': 'WebPage',
-                  '@id': `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_CATEGORY_PATH}/${category.slug}`
+                  '@id': `${routes.categories}/${category.slug}`
             },
             name: category.name,
             description: category.seoDescription || `Explore posts in the ${category.name} category on Your Blog Name`,
-            url: `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_CATEGORY_PATH}/${category.slug}`,
+            url: `${routes.categories}/${category.slug}`,
             isPartOf: {
                   '@type': 'WebSite',
                   name: 'Your Blog Name',
-                  url: env.NEXT_PUBLIC_BASE_URL
+                  url: routes.home
             },
             inLanguage: 'en-US', // Adjust this based on your blog's language
             datePublished: category.createdAt.toISOString(),
             dateModified: category.updatedAt.toISOString()
       }
+
+      const breadcrumbItems = [
+            { label: 'Categories', href: routes.categories },
+            { label: category.name, href: `${routes.categories}/${category.slug}` }
+      ]
 
       return (
             <>
@@ -87,6 +93,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
                         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
                   />
                   <div className="container mx-auto px-4 py-8">
+                        <Breadcrumb items={breadcrumbItems} />
                         <h1 className="text-3xl font-bold mb-8">Category: {category.name}</h1>
                         {category.posts.map((post) => (
                               <PostItem

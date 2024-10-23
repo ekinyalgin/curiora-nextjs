@@ -7,6 +7,8 @@ import { ColumnDef } from '@tanstack/react-table'
 import { TableComponent } from '@/components/TableComponent'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import Link from 'next/link'
+import { routes } from '@/lib/routes'
 
 interface Post {
       id: number
@@ -59,7 +61,7 @@ export default function PostsPage() {
       }, [session, status, router, fetchPosts])
 
       const handleEdit = (id: number) => {
-            router.push(`/admin/posts/${id}`)
+            router.push(`${routes.admin.posts}/${id}`)
       }
 
       const handleDelete = async (id: number) => {
@@ -78,7 +80,7 @@ export default function PostsPage() {
       }
 
       const handleAddNew = () => {
-            router.push('/admin/posts/new')
+            router.push(`${routes.admin.posts}/new`)
       }
 
       const handleSearch = async (term: string) => {
@@ -112,7 +114,14 @@ export default function PostsPage() {
             {
                   accessorKey: 'title',
                   header: () => <div className="w-3/12">Title</div>,
-                  cell: ({ row }) => <div className="font-semibold">{row.getValue('title')}</div>
+                  cell: ({ row }) => (
+                        <Link 
+                              href={`${routes.posts}/${row.original.slug}`}
+                              className="font-semibold hover:underline"
+                        >
+                              {row.getValue('title')}
+                        </Link>
+                  )
             },
             {
                   accessorKey: 'status',

@@ -3,7 +3,8 @@ import { PostItem } from '@/components/PostItem'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Script from 'next/script'
-import { env } from 'process'
+import Breadcrumb from '@/components/Breadcrumb'
+import { routes } from '@/lib/routes'
 
 async function getTag(slug: string) {
       return prisma.tag.findUnique({
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       const seoTitle = tag.seoTitle || `${tag.name} | Your Blog Name`
       const seoDescription = tag.seoDescription || `Explore posts tagged with ${tag.name} on Your Blog Name`
 
-      const tagUrl = `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_TAG_PATH}/${tag.slug}`
+      const tagUrl = `${routes.tags}/${tag.slug}`
 
       return {
             title: seoTitle,
@@ -63,20 +64,25 @@ export default async function TagPage({ params }: { params: { slug: string } }) 
             '@type': 'CollectionPage',
             mainEntityOfPage: {
                   '@type': 'WebPage',
-                  '@id': `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_TAG_PATH}/${tag.slug}`
+                  '@id': `${routes.tags}/${tag.slug}`
             },
             name: tag.name,
             description: tag.seoDescription || `Explore posts tagged with ${tag.name} on Your Blog Name`,
-            url: `${env.NEXT_PUBLIC_BASE_URL}${env.NEXT_PUBLIC_TAG_PATH}/${tag.slug}`,
+            url: `${routes.tags}/${tag.slug}`,
             isPartOf: {
                   '@type': 'WebSite',
                   name: 'Your Blog Name',
-                  url: env.NEXT_PUBLIC_BASE_URL
+                  url: routes.home
             },
             inLanguage: 'en-US', // Adjust this based on your blog's language
             datePublished: tag.createdAt.toISOString(),
             dateModified: tag.updatedAt.toISOString()
       }
+
+      const breadcrumbItems = [
+            { label: 'Tags', href: routes.tags },
+            { label: tag.name, href: `${routes.tags}/${tag.slug}` }
+      ]
 
       return (
             <>
@@ -86,6 +92,7 @@ export default async function TagPage({ params }: { params: { slug: string } }) 
                         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
                   />
                   <div className="container mx-auto px-4 py-8">
+                        <Breadcrumb items={breadcrumbItems} />
                         <h1 className="text-3xl font-bold mb-8">Tag: {tag.name}</h1>
                         {tag.posts.map((post) => (
                               <PostItem
